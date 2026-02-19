@@ -108,6 +108,17 @@ CREATE TABLE pedido_productos (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );
+CREATE TABLE contactos (
+    id_contacto INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    tipo ENUM('consulta','queja','reclamacion','otro') NOT NULL,
+    mensaje TEXT NOT NULL,
+    fecha DATETIME DEFAULT CURRENT_TIMESTAMP,
+    id_usuario INT NULL,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE SET NULL
+);
+
 
 ALTER TABLE productos
 ADD mas_vendido BOOLEAN DEFAULT FALSE,
@@ -154,8 +165,3 @@ INSERT INTO productos (nombre, descripcion, precio, talla, stock, id_categoria, 
 ('Cinturón de Piel', 'Cinturón de piel marrón, clásico', 19.99, 'Única', 40, 9, FALSE, FALSE, TRUE),
 ('Calcetines Deportivos', 'Pack de 3 calcetines transpirables', 9.99, 'Única', 60, 9, FALSE, TRUE, FALSE),
 ('Camiseta Deportiva', 'Camiseta transpirable para deporte', 22.99, 'M', 35, 1, TRUE, TRUE, TRUE);
-
-
-
-
-select*from usuarios;

@@ -42,6 +42,25 @@ if (!empty($_GET['precio_max'])) {
     $sqlBase .= " AND p.precio <= $precio_max";
 }
 
+// Filtro color
+$stmtColores = $conexion->query("SELECT DISTINCT color FROM productos WHERE color IS NOT NULL AND color != ''");
+$colores_disponibles = $stmtColores->fetchAll(PDO::FETCH_ASSOC);
+
+if (!empty($_GET['color'])) {
+    $colores_seleccionados = array_map([$conexion, 'quote'], $_GET['color']);
+    $sqlBase .= " AND p.color IN (" . implode(",", $colores_seleccionados) . ")";
+}
+
+// Filtro estilo
+$stmtEstilos = $conexion->query("SELECT DISTINCT estilo FROM productos WHERE estilo IS NOT NULL AND estilo != ''");
+$estilos_disponibles = $stmtEstilos->fetchAll(PDO::FETCH_ASSOC);
+
+if (!empty($_GET['estilo'])) {
+    $estilos_seleccionados = array_map([$conexion, 'quote'], $_GET['estilo']);
+    $sqlBase .= " AND p.estilo IN (" . implode(",", $estilos_seleccionados) . ")";
+}
+
+
 // ---------------- TOTAL PRODUCTOS ----------------
 $stmtTotal = $conexion->query("SELECT COUNT(*) as total " . $sqlBase);
 $totalProductos = $stmtTotal->fetch(PDO::FETCH_ASSOC)['total'];
@@ -87,6 +106,8 @@ if (!empty($_GET)) {
                 <option value="">Filtrar</option>
                 <option value="precio">Precio</option>
                 <option value="talla">Talla</option>
+                <option value="color">Color</option>
+                <option value="estilo">Estilo</option>
             </select>
 
             <button type="submit">🔍</button>
@@ -175,6 +196,30 @@ selectFiltro.addEventListener('change', function() {
         modal.innerHTML = `<?php echo $htmlTallas; ?><button type="button" id="aceptar-filtro">Aceptar</button>`;
         modal.style.display = 'block';
         overlay.style.display = 'block';
+
+    } else if(this.value === 'color') {
+    <?php
+    $htmlColores = '';
+    foreach($colores_disponibles as $c) {
+        $htmlColores .= '<label><input type="checkbox" name="color[]" value="'.$c['color'].'"> '.$c['color'].'</label>';
+    }
+    ?>
+    modal.innerHTML = `<?php echo $htmlColores; ?><button type="button" id="aceptar-filtro">Aceptar</button>`;
+    modal.style.display = 'block';
+    overlay.style.display = 'block';
+
+    } else if(this.value === 'estilo') {
+    <?php
+    $htmlEstilos = '';
+    foreach($estilos_disponibles as $e) {
+        $htmlEstilos .= '<label><input type="checkbox" name="estilo[]" value="'.$e['estilo'].'"> '.$e['estilo'].'</label>';
+    }
+    ?>
+    modal.innerHTML = `<?php echo $htmlEstilos; ?><button type="button" id="aceptar-filtro">Aceptar</button>`;
+    modal.style.display = 'block';
+    overlay.style.display = 'block';
+
+
     } else {
         modal.style.display = 'none';
         overlay.style.display = 'none';
