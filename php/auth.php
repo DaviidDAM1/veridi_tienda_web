@@ -1,6 +1,5 @@
 <?php
 require_once "../config/conexion.php";
-require_once "carrito_storage.php";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -85,22 +84,12 @@ if (isset($_POST['login'])) {
             $_SESSION['usuario_id'] = $usuario['id_usuario'];
             $_SESSION['usuario_nombre'] = $usuario['nombre'];
 
-            $carritoSesion = (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) ? $_SESSION['carrito'] : [];
-            $carritoGuardado = carritoLoadByUser($conexion, (int)$usuario['id_usuario']);
-            $carritoFusionado = carritoMerge($carritoGuardado, $carritoSesion);
-
-            $_SESSION['carrito'] = $carritoFusionado;
-            carritoSaveByUser($conexion, (int)$usuario['id_usuario'], $carritoFusionado);
-
-            if ($remember) {
-                $duracion = 60 * 60 * 24 * 30;
-                setcookie(session_name(), session_id(), [
-                    'expires' => time() + $duracion,
-                    'path' => '/',
-                    'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
-                    'httponly' => true,
-                    'samesite' => 'Lax',
-                ]);
+            // Inicializar carrito y deseos si no existen
+            if (!isset($_SESSION['carrito']) || !is_array($_SESSION['carrito'])) {
+                $_SESSION['carrito'] = [];
+            }
+            if (!isset($_SESSION['deseos']) || !is_array($_SESSION['deseos'])) {
+                $_SESSION['deseos'] = [];
             }
 
             header("Location: ../index.php");

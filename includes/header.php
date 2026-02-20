@@ -10,30 +10,50 @@ if (session_status() === PHP_SESSION_NONE) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? $page_title . ' - Veridi' : 'Veridi - Tienda de ropa'; ?></title>
-    <link rel="stylesheet" href="css/styles.css">
+    <?php $cssVersion = @filemtime(__DIR__ . '/../css/styles.css') ?: time(); ?>
+    <link rel="stylesheet" href="css/styles.css?v=<?php echo $cssVersion; ?>">
 </head>
 <body>
 
 <header>
     <div class="header-container">
-        <div class="logo">
-            <a href="index.php"><h1>👕 VERIDI</h1></a>
+        <!-- IZQUIERDA: LOGO -->
+        <div class="header-left">
+            <div class="logo">
+                <a href="index.php" title="Volver a inicio">
+                    <img src="img/Logo.png" alt="Veridi Logo" class="logo-img">
+                </a>
+            </div>
         </div>
         
-        <div class="nav-center">
-            <a href="tienda.php" class="btn-productos">Productos</a>
-            <a href="contacto.php" class="btn-productos">Contacto</a>
-            <a href="sobre-nosotros.php" class="btn-productos">Sobre nosotros</a>
+        <!-- CENTRO: NAVEGACIÓN -->
+        <div class="header-center">
+            <nav class="nav-principal">
+                <a href="index.php" class="nav-link nav-main">Inicio</a>
+                <a href="tienda.php" class="nav-link nav-main">Catálogo</a>
+                <a href="contacto.php" class="nav-link nav-main">Contacto</a>
+                <a href="sobre-nosotros.php" class="nav-link nav-main">Sobre nosotros</a>
+            </nav>
         </div>
         
-        <div class="user-area">
-            <?php if (isset($_SESSION['usuario_id'])): ?>
-                <span class="user-name">Bienvenido, <?php echo htmlspecialchars($_SESSION['usuario_nombre']); ?></span>
-                <a href="logout.php" class="nav-link">Cerrar sesión</a>
-            <?php else: ?>
-                <span class="user-name">Bienvenido, usuario</span>
-                <a href="login.php" class="nav-link">Iniciar sesión</a>
-            <?php endif; ?>
+        <!-- DERECHA: USUARIO Y ACCIONES -->
+        <div class="header-right">
+            <div class="user-section">
+                <?php if (isset($_SESSION['usuario_id'])): ?>
+                    <span class="user-greeting">Bienvenido, <span class="user-name-value"><?php echo htmlspecialchars(strlen($_SESSION['usuario_nombre']) > 15 ? substr($_SESSION['usuario_nombre'], 0, 15) . '...' : $_SESSION['usuario_nombre']); ?></span></span>
+                    
+                    <a href="carrito.php" class="icon-button carrito-btn" title="Ver carrito" aria-label="Ir al carrito">
+                        <span class="icon">🛒</span>
+                    </a>
+                    
+                    <a href="logout.php" class="nav-link logout-btn" title="Cerrar sesión">Cerrar sesión</a>
+                <?php else: ?>
+                    <span class="user-greeting">Bienvenido, <span class="user-name-value">usuario</span></span>
+                    
+                    <a href="login.php" class="nav-link auth-btn" title="Iniciar sesión">Iniciar sesión</a>
+                    <a href="registro.php" class="nav-link auth-btn" title="Registrarse">Registrarse</a>
+                <?php endif; ?>
+            </div>
         </div>
     </div>
 </header>

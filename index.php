@@ -14,54 +14,58 @@ require_once "includes/header.php";
     <div class="cards">
 
         <?php
-        // Producto más vendido
-        $stmt = $conexion->query("SELECT * FROM productos WHERE mas_vendido = TRUE LIMIT 1");
-        $masVendido = $stmt->fetch(PDO::FETCH_ASSOC);
+        // Obtener 3 productos para mostrar
+        $stmt = $conexion->query("SELECT * FROM productos LIMIT 3");
+        $productosDestacados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        if ($masVendido):
-        ?>
+        if (!empty($productosDestacados)):
+            $masVendido = $productosDestacados[0] ?? null;
+            $oferta = $productosDestacados[1] ?? null;
+            $nuevo = $productosDestacados[2] ?? null;
+
+            // Producto 1: Bestseller
+            if ($masVendido):
+            ?>
             <div class="card">
                 <img src="img/camisetaNegraVeridi.png" alt="Más vendido" class="producto-img">
                 <h3>🏆 Más vendido</h3>
-                <p><?php echo $masVendido['nombre']; ?></p>
-                <p><?php echo $masVendido['descripcion']; ?></p>
-                <p><?php echo $masVendido['precio']; ?> €</p>
+                <p><?php echo htmlspecialchars($masVendido['nombre']); ?></p>
+                <p><?php echo htmlspecialchars($masVendido['descripcion'] ?? ''); ?></p>
+                <p><?php echo number_format($masVendido['precio'], 2, ',', '.'); ?> €</p>
+                <a href="producto-detalle.php?id=<?php echo $masVendido['id_producto']; ?>" class="btn-ver">Ver producto</a>
             </div>
-        <?php endif; ?>
+            <?php endif; ?>
 
-        <?php
-        // Producto en oferta
-        $stmt = $conexion->query("SELECT * FROM productos WHERE en_oferta = TRUE LIMIT 1");
-        $oferta = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($oferta):
-        ?>
+            <?php
+            // Producto 2: Oferta
+            if ($oferta):
+            ?>
             <div class="card">
                 <img src="img/pantalonVeridiNegro.png" alt="Oferta" class="producto-img">
                 <h3>🔥 Oferta</h3>
-                <p><?php echo $oferta['nombre']; ?></p>
-                <p><?php echo $oferta['descripcion']; ?></p>
-                <p><?php echo $oferta['precio']; ?> €</p>
+                <p><?php echo htmlspecialchars($oferta['nombre']); ?></p>
+                <p><?php echo htmlspecialchars($oferta['descripcion'] ?? ''); ?></p>
+                <p><?php echo number_format($oferta['precio'], 2, ',', '.'); ?> €</p>
+                <a href="producto-detalle.php?id=<?php echo $oferta['id_producto']; ?>" class="btn-ver">Ver producto</a>
             </div>
-        <?php endif; ?>
+            <?php endif; ?>
 
-        <?php
-        // Producto nuevo
-        $stmt = $conexion->query("SELECT * FROM productos WHERE es_nuevo = TRUE LIMIT 1");
-        $nuevo = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($nuevo):
-        ?>
+            <?php
+            // Producto 3: Nuevo
+            if ($nuevo):
+            ?>
             <div class="card">
                 <img src="img/abrigoVeridiBlanco.png" alt="Nuevo" class="producto-img">
                 <h3>🆕 Nuevo</h3>
-                <p><?php echo $nuevo['nombre']; ?></p>
-                <p><?php echo $nuevo['descripcion']; ?></p>
-                <p><?php echo $nuevo['precio']; ?> €</p>
+                <p><?php echo htmlspecialchars($nuevo['nombre']); ?></p>
+                <p><?php echo htmlspecialchars($nuevo['descripcion'] ?? ''); ?></p>
+                <p><?php echo number_format($nuevo['precio'], 2, ',', '.'); ?> €</p>
+                <a href="producto-detalle.php?id=<?php echo $nuevo['id_producto']; ?>" class="btn-ver">Ver producto</a>
             </div>
+            <?php endif; ?>
         <?php endif; ?>
 
     </div>
 </main>
 
-<?php require_once "includes/footer.php"; ?>
+<?php require_once "includes/footer.php"; ?><?php require_once "includes/footer.php"; ?>
