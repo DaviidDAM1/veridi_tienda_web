@@ -39,17 +39,62 @@ switch ($action) {
         break;
 
     case 'remove':
-        if ($idProducto > 0 && isset($_SESSION['deseos'][$idProducto])) {
-            unset($_SESSION['deseos'][$idProducto]);
+        if ($idProducto > 0) {
+            // Buscar y eliminar por id_producto
+            $encontrado = false;
+            foreach ($_SESSION['deseos'] as $key => $fav) {
+                if ($fav['id_producto'] == $idProducto) {
+                    unset($_SESSION['deseos'][$key]);
+                    $encontrado = true;
+                    break;
+                }
+            }
+            
+            // También intentar eliminarlo como clave directa
+            if (isset($_SESSION['deseos'][$idProducto])) {
+                unset($_SESSION['deseos'][$idProducto]);
+                $encontrado = true;
+            }
+            
+            if ($encontrado) {
+                $response['success'] = true;
+                $response['message'] = 'Eliminado de favoritos';
+                $response['esFavorito'] = false;
+            } else {
+                $response['success'] = true; // Aceptar aunque no se encontrara
+                $response['message'] = 'Ya no está en favoritos';
+                $response['esFavorito'] = false;
+            }
+        }
+        break;
+
+    case 'check':
+        // Verificar si está en favoritos
+        if ($idProducto > 0) {
+            $esFav = false;
+            
+            // Buscar por id_producto en los valores
+            foreach ($_SESSION['deseos'] as $fav) {
+                if ($fav['id_producto'] == $idProducto) {
+                    $esFav = true;
+                    break;
+                }
+            }
+            
+            // También verificar como clave
+            if (isset($_SESSION['deseos'][$idProducto])) {
+                $esFav = true;
+            }
+            
             $response['success'] = true;
-            $response['message'] = 'Eliminado de favoritos';
-            $response['esFavorito'] = false;
+            $response['esFavorito'] = $esFav;
         }
         break;
 
     default:
-        $response['message'] = 'Acción desconocida';
+        $response['message'] = 'Acción no reconocida';
 }
 
 echo json_encode($response);
+exit;
 ?>

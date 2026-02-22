@@ -1,4 +1,14 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// ========== VERIFICACIÓN: Usuario debe estar loqueado para ver el carrito ==========
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
 $page_title = "Carrito";
 require_once "config/conexion.php";
 require_once "includes/header.php";
@@ -93,12 +103,18 @@ if (!empty($carrito)) {
 
             <div class="carrito-resumen">
                 <p><strong>Total:</strong> <?php echo number_format((float)$total, 2, ',', '.'); ?> €</p>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <form method="POST" action="php/vaciar_carrito.php" style="flex: 1;">
+                <div style="display: flex; gap: 10px; margin-top: 20px; flex-direction: column;">
+                    <a href="checkout.php" style="background: linear-gradient(135deg, var(--veridi-gold-dark) 0%, var(--veridi-gold) 100%); 
+                        color: var(--veridi-black); padding: 14px 24px; border-radius: 6px; font-weight: 700; 
+                        font-size: 15px; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; 
+                        display: flex; align-items: center; justify-content: center; gap: 8px; 
+                        transition: all 0.3s ease; box-shadow: 0 6px 20px rgba(212, 175, 55, 0.3);">
+                        💳 Ir a Pagar
+                    </a>
+                    <form method="POST" action="php/vaciar_carrito.php">
                         <input type="hidden" name="redirect" value="../carrito.php">
-                        <button type="submit" class="btn-eliminar" style="width: 100%;">Vaciar carrito</button>
+                        <button type="submit" class="btn-eliminar" style="width: 100%; padding: 12px 24px; border: 2px solid var(--veridi-gold); background: transparent; color: var(--veridi-gold); font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;">Vaciar carrito</button>
                     </form>
-                    <a href="checkout.php" class="btn-pagar" style="flex: 1; display: block; text-align: center; padding: 10px; text-decoration: none;">Pagar</a>
                 </div>
             </div>
         <?php endif; ?>

@@ -138,6 +138,7 @@ CREATE TABLE carrito_detalle (
 CREATE TABLE pedidos (
     id_pedido INT AUTO_INCREMENT PRIMARY KEY,
     id_usuario INT,
+    direccion TEXT NOT NULL,
     total DECIMAL(10,2) NOT NULL,
     estado ENUM('pendiente','pagado','enviado','cancelado') DEFAULT 'pendiente',
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -60,6 +60,10 @@
         <div class="link">
             ¿Ya tienes cuenta? <a href="login.php">Inicia sesión aquí</a>
         </div>
+        
+        <div class="link" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(212, 175, 55, 0.3);">
+            <a href="index.php" style="color: var(--veridi-text-muted);">Continuar sin registrarme</a>
+        </div>
     </div>
 </div>
 

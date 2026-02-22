@@ -64,7 +64,6 @@ if (isset($_POST['login'])) {
 
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
-    $remember = isset($_POST['remember']) && $_POST['remember'] === '1';
 
     if ($email === '' || $password === '') {
         header("Location: ../login.php?error=faltan_campos");

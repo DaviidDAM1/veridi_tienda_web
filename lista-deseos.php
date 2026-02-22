@@ -1,4 +1,14 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// ========== VERIFICACIÓN: Usuario debe estar loqueado para ver favoritos ==========
+if (!isset($_SESSION['usuario_id'])) {
+    header("Location: login.php");
+    exit;
+}
+
 $page_title = "Lista de deseos";
 require_once "includes/header.php";
 

@@ -1,5 +1,6 @@
 <?php
 require_once "config/conexion.php";
+require_once "config/imagenes.php";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -102,14 +103,10 @@ $stmtRelacionados->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
 $stmtRelacionados->execute();
 $productosRelacionados = $stmtRelacionados->fetchAll(PDO::FETCH_ASSOC);
 
-// Mapa de imágenes (tú las completarás)
-$imagenesProducto = [
-    1 => 'img/camisetaNegraVeridi.png',
-    2 => 'img/pantalonVeridiNegro.png',
-    3 => 'img/abrigoVeridiBlanco.png',
-];
-
-$imagenProducto = $imagenesProducto[$idProducto] ?? ('img/producto-' . $idProducto . '.png');
+// Obtener imagen del producto
+$imagenProducto = obtenerImagenProducto($idProducto);
+// Agregar timestamp para forzar recarga de imágenes (evitar caché)
+$imagenProducto .= '?v=' . time();
 
 // Verificar si está en favoritos
 $esFavorito = false;
@@ -220,20 +217,34 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- Botones de acción -->
             <div class="detalle-acciones">
                 <?php if (!empty($tallas)): ?>
-                    <form id="form-carrito" method="POST" action="php/agregar_carrito.php" style="margin-bottom: 10px;">
-                        <input type="hidden" name="id_producto" value="<?php echo $idProducto; ?>">
-                        <input type="hidden" name="nombre" value="<?php echo htmlspecialchars($producto['nombre']); ?>">
-                        <input type="hidden" name="precio" value="<?php echo $producto['precio']; ?>">
-                        <input type="hidden" name="imagen" value="<?php echo htmlspecialchars($imagenProducto); ?>">
-                        <input type="hidden" name="id_talla" id="input-talla" value="">
-                        <input type="hidden" name="redirect" value="producto-detalle.php?id=<?php echo $idProducto; ?>">
-                        <button type="submit" class="btn-agregar-carrito">Agregar al carrito</button>
-                    </form>
+                    <?php if (isset($_SESSION['usuario_id'])): ?>
+                        <!-- Usuario loqueado: mostrar formulario de carrito -->
+                        <form id="form-carrito" method="POST" action="php/agregar_carrito.php" style="margin-bottom: 10px;">
+                            <input type="hidden" name="id_producto" value="<?php echo $idProducto; ?>">
+                            <input type="hidden" name="nombre" value="<?php echo htmlspecialchars($producto['nombre']); ?>">
+                            <input type="hidden" name="precio" value="<?php echo $producto['precio']; ?>">
+                            <input type="hidden" name="imagen" value="<?php echo htmlspecialchars($imagenProducto); ?>">
+                            <input type="hidden" name="id_talla" id="input-talla" value="">
+                            <input type="hidden" name="redirect" value="producto-detalle.php?id=<?php echo $idProducto; ?>">
+                            <button type="submit" class="btn-agregar-carrito">Agregar al carrito</button>
+                        </form>
+                    <?php else: ?>
+                        <!-- Usuario no loqueado: mostrar botón de login -->
+                        <a href="login.php" class="btn-agregar-carrito" style="display: block; text-align: center; text-decoration: none; color: inherit;">🔒 Inicia sesión para comprar</a>
+                    <?php endif; ?>
                 <?php endif; ?>
 
-                <button type="button" class="btn-favorito <?php echo $esFavorito ? 'es-favorito' : ''; ?>" onclick="agregarAFavoritosDetalle(<?php echo $idProducto; ?>, '<?php echo htmlspecialchars($producto['nombre']); ?>', <?php echo $producto['precio']; ?>, '<?php echo htmlspecialchars($imagenProducto); ?>', <?php echo $esFavorito ? 'true' : 'false'; ?>)">
-                    <?php echo $esFavorito ? '❤️ Eliminar de favoritos' : '🤍 Añadir a favoritos'; ?>
-                </button>
+                <?php if (isset($_SESSION['usuario_id'])): ?>
+                    <!-- Usuario loqueado: mostrar botón de favoritos -->
+                    <button type="button" class="btn-favorito <?php echo $esFavorito ? 'es-favorito' : ''; ?>" id="btn-favorito" data-id-producto="<?php echo $idProducto; ?>" data-nombre="<?php echo htmlspecialchars($producto['nombre']); ?>" data-precio="<?php echo $producto['precio']; ?>" data-imagen="<?php echo htmlspecialchars($imagenProducto); ?>" data-es-favorito="<?php echo $esFavorito ? 'true' : 'false'; ?>">
+                        <?php echo $esFavorito ? '❤️ Eliminar de favoritos' : '🤍 Añadir a favoritos'; ?>
+                    </button>
+                <?php else: ?>
+                    <!-- Usuario no loqueado: mostrar mensaje -->
+                    <button type="button" class="btn-favorito" style="cursor: not-allowed; opacity: 0.6;" disabled>
+                        🔒 Inicia sesión para añadir a favoritos
+                    </button>
+                <?php endif; ?>
             </div>
 
             <!-- Ir a tienda -->
@@ -250,7 +261,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="cards-relacionados">
             <?php foreach ($productosRelacionados as $prod): ?>
                 <?php
-                $imagenRel = $imagenesProducto[$prod['id_producto']] ?? ('img/producto-' . $prod['id_producto'] . '.png');
+                $imagenRel = obtenerImagenProducto($prod['id_producto']);
+                $imagenRel .= '?v=' . time();
                 ?>
                 <div class="card-relacionado">
                     <img src="<?php echo htmlspecialchars($imagenRel); ?>" alt="<?php echo htmlspecialchars($prod['nombre']); ?>" class="producto-img-rel">
@@ -424,6 +436,9 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: 600;
     color: var(--veridi-gold);
     pointer-events: none;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .talla-option input[type="radio"]:checked ~ .talla-label {
@@ -686,7 +701,16 @@ function mostrarToast(mensaje, tipo = 'success') {
 }
 
 // Agregar a favoritos desde detalle
-function agregarAFavoritosDetalle(idProducto, nombre, precio, imagen, esFavorito) {
+function agregarAFavoritosDetalle() {
+    const btn = document.getElementById('btn-favorito');
+    if(!btn) return;
+    
+    const idProducto = btn.dataset.idProducto;
+    const nombre = btn.dataset.nombre;
+    const precio = btn.dataset.precio;
+    const imagen = btn.dataset.imagen;
+    const esFavorito = btn.dataset.esFavorito === 'true';
+    
     const action = esFavorito ? 'remove' : 'add';
     
     const formData = new FormData();
@@ -700,23 +724,45 @@ function agregarAFavoritosDetalle(idProducto, nombre, precio, imagen, esFavorito
         method: 'POST',
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Error HTTP: ' + response.status);
+        }
+        return response.json();
+    })
     .then(data => {
         if(data.success) {
-            const btn = document.querySelector('.btn-favorito');
             if(data.esFavorito) {
                 btn.classList.add('es-favorito');
                 btn.textContent = '❤️ Eliminar de favoritos';
+                btn.dataset.esFavorito = 'true';
                 mostrarToast('❤️ Agregado a favoritos');
             } else {
                 btn.classList.remove('es-favorito');
                 btn.textContent = '🤍 Añadir a favoritos';
+                btn.dataset.esFavorito = 'false';
                 mostrarToast('Eliminado de favoritos');
             }
+        } else {
+            mostrarToast('Error: ' + data.message);
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarToast('Error: ' + error.message);
+    });
 }
+
+// Inicializar evento del botón de favoritos (con reintentos)
+(function attachListener() {
+    const btnFavorito = document.getElementById('btn-favorito');
+    if(btnFavorito) {
+        btnFavorito.removeEventListener('click', agregarAFavoritosDetalle);
+        btnFavorito.addEventListener('click', agregarAFavoritosDetalle);
+    } else {
+        setTimeout(attachListener, 50);
+    }
+})();
 
 // CSS para animaciones
 const style = document.createElement('style');

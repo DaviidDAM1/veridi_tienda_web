@@ -12,6 +12,14 @@ if (session_status() === PHP_SESSION_NONE) {
     <title><?php echo isset($page_title) ? $page_title . ' - Veridi' : 'Veridi - Tienda de ropa'; ?></title>
     <?php $cssVersion = @filemtime(__DIR__ . '/../css/styles.css') ?: time(); ?>
     <link rel="stylesheet" href="css/styles.css?v=<?php echo $cssVersion; ?>">
+    
+    <!-- Script para cargar tema guardado inmediatamente -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('veridi-theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
 </head>
 <body>
 

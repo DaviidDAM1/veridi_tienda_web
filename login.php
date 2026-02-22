@@ -44,17 +44,16 @@
             
             <label for="password">Contraseña:</label>
             <input type="password" id="password" name="password" placeholder="Contraseña" required>
-
-            <label class="checkbox-row" for="remember">
-                <input type="checkbox" id="remember" name="remember" value="1">
-                Recordarme en este dispositivo
-            </label>
             
             <button type="submit" name="login">Iniciar Sesión</button>
         </form>
         
         <div class="link">
             ¿No tienes cuenta? <a href="registro.php">Regístrate aquí</a>
+        </div>
+        
+        <div class="link" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(212, 175, 55, 0.3);">
+            <a href="index.php" style="color: var(--veridi-text-muted);">Continuar sin iniciar sesión</a>
         </div>
     </div>
 </div>

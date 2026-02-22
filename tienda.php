@@ -1,5 +1,6 @@
 <?php
 require_once "config/conexion.php";
+require_once "config/imagenes.php";
 $page_title = "Tienda";
 require_once "includes/header.php";
 
@@ -300,7 +301,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <?php foreach($productos as $producto): ?>
                 <?php
                 $idProductoActual = (int)$producto['id_producto'];
-                $imagenProducto = $imagenesProducto[$idProductoActual] ?? ('img/producto' . $idProductoActual . '.jpg');
+                $imagenProducto = obtenerImagenProducto($idProductoActual);
+                // Agregar timestamp para forzar recarga de imágenes (evitar caché)
+                $imagenProducto .= '?v=' . time();
                 ?>
                 <div class="card">
                     <img src="<?php echo htmlspecialchars($imagenProducto); ?>" alt="<?php echo htmlspecialchars($producto['nombre']); ?>" class="producto-img">
@@ -311,17 +314,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="botones-card">
                         <a class="btn-anadir" href="producto-detalle.php?id=<?php echo $producto['id_producto']; ?>">Agregar al carrito</a>
 
-                        <form method="POST" action="php/deseos.php" class="form-add-carrito" style="display:inline;">
-                            <input type="hidden" name="action" value="add">
-                            <input type="hidden" name="id_producto" value="<?php echo (int)$producto['id_producto']; ?>">
-                            <input type="hidden" name="nombre" value="<?php echo htmlspecialchars($producto['nombre']); ?>">
-                            <input type="hidden" name="precio" value="<?php echo (float)$producto['precio']; ?>">
-                            <input type="hidden" name="imagen" value="<?php echo htmlspecialchars($imagenProducto); ?>">
-                            <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirectTienda); ?>">
-                            <button type="submit" class="btn-deseo-card">Añadir a favoritos</button>
-                        </form>
+                        <?php if (isset($_SESSION['usuario_id'])): ?>
+                            <!-- Usuario loqueado: mostrar botón de favoritos -->
+                            <form method="POST" action="php/deseos.php" class="form-add-carrito" style="display:inline;">
+                                <input type="hidden" name="action" value="add">
+                                <input type="hidden" name="id_producto" value="<?php echo (int)$producto['id_producto']; ?>">
+                                <input type="hidden" name="nombre" value="<?php echo htmlspecialchars($producto['nombre']); ?>">
+                                <input type="hidden" name="precio" value="<?php echo (float)$producto['precio']; ?>">
+                                <input type="hidden" name="imagen" value="<?php echo htmlspecialchars($imagenProducto); ?>">
+                                <input type="hidden" name="redirect" value="<?php echo htmlspecialchars($redirectTienda); ?>">
+                                <button type="submit" class="btn-deseo-card">Añadir a favoritos</button>
+                            </form>
+                        <?php else: ?>
+                            <!-- Usuario no loqueado: botón deshabilitado -->
+                            <button type="button" class="btn-deseo-card" style="cursor: not-allowed; opacity: 0.6;" disabled>🔒 Favoritos</button>
+                        <?php endif; ?>
 
-                        <a class="btn-ver" href="producto-detalle.php?id=<?php echo $producto['id_producto']; ?>">Ver producto</a>
+                        <!-- <a class="btn-ver" href="producto-detalle.php?id=<?php echo $producto['id_producto']; ?>">Ver producto</a> -->
                     </div>
                 </div>
             <?php endforeach; ?>
