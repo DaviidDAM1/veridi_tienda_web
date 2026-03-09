@@ -409,6 +409,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     cargarFiltrosDesdeURL();
+
+    function escapeHtml(value) {
+        return String(value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function colorToCssValue(color) {
+        const raw = (color || '').toString().trim();
+        const normalized = raw.toLowerCase();
+
+        const mapaColores = {
+            'negro': '#111111',
+            'blanco': '#ffffff',
+            'gris': '#808080',
+            'gris claro': '#bdbdbd',
+            'gris oscuro': '#424242',
+            'azul': '#1976d2',
+            'azul marino': '#1f2a44',
+            'marino': '#1f2a44',
+            'celeste': '#4fc3f7',
+            'rojo': '#d32f2f',
+            'verde': '#2e7d32',
+            'amarillo': '#fbc02d',
+            'naranja': '#ef6c00',
+            'morado': '#7b1fa2',
+            'rosa': '#e91e63',
+            'marron': '#6d4c41',
+            'cafe': '#6d4c41',
+            'beige': '#d7ccc8',
+            'dorado': '#d4af37',
+            'plateado': '#b0bec5'
+        };
+
+        if (mapaColores[normalized]) {
+            return mapaColores[normalized];
+        }
+
+        if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(raw)) {
+            return raw;
+        }
+
+        if (/^rgba?\(/i.test(raw) || /^hsla?\(/i.test(raw)) {
+            return raw;
+        }
+
+        return raw;
+    }
     
     // Función para cerrar modal
     function cerrarModal() {
@@ -480,9 +531,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="modal-body">
                         <div class="color-options">
                             ${coloresCF.map(color => `
-                                <label class="checkbox-container">
-                                    <input type="checkbox" value="${color}" ${filtrosActuales.color.includes(color) ? 'checked' : ''}>
-                                    <span class="color-label">${color}</span>
+                                <label class="checkbox-container color-checkbox">
+                                    <input type="checkbox" value="${escapeHtml(color)}" ${filtrosActuales.color.includes(color) ? 'checked' : ''}>
+                                    <span class="color-label color-filter-label">
+                                        <span class="color-swatch" style="background-color: ${escapeHtml(colorToCssValue(color))};"></span>
+                                        ${escapeHtml(color)}
+                                    </span>
                                 </label>
                             `).join('')}
                         </div>

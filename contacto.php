@@ -30,7 +30,7 @@ if (isset($_SESSION['usuario_id'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // ========== VERIFICACIÓN: Usuario debe estar loqueado para enviar mensajes ==========
     if (!isset($_SESSION['usuario_id'])) {
-        $error = "❌ Debes iniciar sesión para enviar un mensaje. <a href='login.php' style='color: var(--veridi-gold);'>Inicia sesión aquí</a>";
+        $error = "❌ Debes iniciar sesión para enviar un mensaje desde Login / Registro en el encabezado.";
     } else {
         $email = trim($_POST["email"] ?? "");
         $tipo = $_POST["tipo"] ?? "";
@@ -100,8 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <?php if (!isset($_SESSION['usuario_id'])): ?>
                     <div class="info-message" style="background: rgba(212, 175, 55, 0.1); border: 2px solid var(--veridi-gold); padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
                         🔒 <strong>Debes iniciar sesión para enviar mensajes.</strong><br>
-                        <a href="login.php" style="color: var(--veridi-gold); text-decoration: underline; font-weight: 600;">Inicia sesión aquí</a> o 
-                        <a href="registro.php" style="color: var(--veridi-gold); text-decoration: underline; font-weight: 600;">Regístrate</a>
+                        Usa el botón <strong>Login / Registro</strong> del encabezado.
                     </div>
                 <?php endif; ?>
 

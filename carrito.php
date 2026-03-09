@@ -5,7 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // ========== VERIFICACIÓN: Usuario debe estar loqueado para ver el carrito ==========
 if (!isset($_SESSION['usuario_id'])) {
-    header("Location: login.php");
+    header("Location: index.php?auth_open=1&auth_tab=login&auth_error=requiere_login");
     exit;
 }
 

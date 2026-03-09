@@ -5,6 +5,28 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+function redirectWithParams(string $basePage, array $params = []): void {
+    $basePage = trim($basePage);
+    if (!preg_match('/^[a-zA-Z0-9._-]+\.php$/', $basePage)) {
+        $basePage = 'index.php';
+    }
+
+    $query = http_build_query($params);
+    $url = '../' . $basePage . ($query !== '' ? '?' . $query : '');
+    header('Location: ' . $url);
+    exit();
+}
+
+function getRedirectTarget(): string {
+    $redirect = trim($_POST['redirect'] ?? 'index.php');
+    if (!preg_match('/^[a-zA-Z0-9._-]+\.php$/', $redirect)) {
+        return 'index.php';
+    }
+    return $redirect;
+}
+
+$redirectPage = getRedirectTarget();
+
 if (isset($_POST['registro'])) {
 
     $nombre = trim($_POST['nombre'] ?? '');
@@ -13,18 +35,15 @@ if (isset($_POST['registro'])) {
     $passwordConfirm = $_POST['password_confirm'] ?? '';
 
     if ($nombre === '' || $email === '' || $password === '') {
-        header("Location: ../registro.php?error=faltan_campos");
-        exit();
+        redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'register', 'auth_error' => 'faltan_campos']);
     }
 
     if (strlen($password) < 6) {
-        header("Location: ../registro.php?error=password_corta");
-        exit();
+        redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'register', 'auth_error' => 'password_corta']);
     }
 
     if ($password !== $passwordConfirm) {
-        header("Location: ../registro.php?error=password_no_coincide");
-        exit();
+        redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'register', 'auth_error' => 'password_no_coincide']);
     }
 
     // Hashear contraseña
@@ -36,8 +55,7 @@ if (isset($_POST['registro'])) {
         $stmtExiste->execute();
 
         if ($stmtExiste->fetch(PDO::FETCH_ASSOC)) {
-            header("Location: ../registro.php?error=email_existente");
-            exit();
+            redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'register', 'auth_error' => 'email_existente']);
         }
 
         $sql = "INSERT INTO usuarios (nombre, email, password) 
@@ -50,12 +68,10 @@ if (isset($_POST['registro'])) {
 
         $stmt->execute();
 
-        header("Location: ../login.php?success=registro");
-        exit();
+        redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'login', 'auth_success' => 'registro']);
 
     } catch (PDOException $e) {
-        header("Location: ../registro.php?error=general");
-        exit();
+        redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'register', 'auth_error' => 'general']);
     }
 }
 
@@ -66,8 +82,7 @@ if (isset($_POST['login'])) {
     $password = $_POST['password'] ?? '';
 
     if ($email === '' || $password === '') {
-        header("Location: ../login.php?error=faltan_campos");
-        exit();
+        redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'login', 'auth_error' => 'faltan_campos']);
     }
 
     try {
@@ -91,21 +106,17 @@ if (isset($_POST['login'])) {
                 $_SESSION['deseos'] = [];
             }
 
-            header("Location: ../index.php");
-            exit();
+            redirectWithParams($redirectPage);
 
         } else {
-            header("Location: ../login.php?error=credenciales");
-            exit();
+            redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'login', 'auth_error' => 'credenciales']);
         }
 
     } catch (PDOException $e) {
-        header("Location: ../login.php?error=general");
-        exit();
+        redirectWithParams($redirectPage, ['auth_open' => '1', 'auth_tab' => 'login', 'auth_error' => 'general']);
     }
 }
 
-header("Location: ../login.php");
-exit();
+redirectWithParams('index.php');
 
 

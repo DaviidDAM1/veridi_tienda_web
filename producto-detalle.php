@@ -230,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </form>
                     <?php else: ?>
                         <!-- Usuario no loqueado: mostrar botón de login -->
-                        <a href="login.php" class="btn-agregar-carrito" style="display: block; text-align: center; text-decoration: none; color: inherit;">🔒 Inicia sesión para comprar</a>
+                        <a href="producto-detalle.php?id=<?php echo $idProducto; ?>&auth_open=1&auth_tab=login&auth_error=requiere_login" class="btn-agregar-carrito" style="display: block; text-align: center; text-decoration: none; color: inherit;">🔒 Inicia sesión para comprar</a>
                     <?php endif; ?>
                 <?php endif; ?>
 
