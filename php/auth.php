@@ -97,6 +97,7 @@ if (isset($_POST['login'])) {
 
             $_SESSION['usuario_id'] = $usuario['id_usuario'];
             $_SESSION['usuario_nombre'] = $usuario['nombre'];
+            $_SESSION['usuario_rol'] = $usuario['rol'] ?? 'cliente';
 
             // Inicializar carrito y deseos si no existen
             if (!isset($_SESSION['carrito']) || !is_array($_SESSION['carrito'])) {

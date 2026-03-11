@@ -19,7 +19,7 @@ $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
 $inicio = ($paginaActual - 1) * $productosPorPagina;
 
 // ---------------- SQL BASE ----------------
-$sqlBase = "FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE 1";
+$sqlBase = "FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE 1 AND (p.oculto = 0 OR p.oculto IS NULL)";
 
 // Filtro búsqueda
 if (!empty($_GET['buscar'])) {
@@ -34,7 +34,7 @@ if (!empty($_GET['categoria'])) {
 }
 
 // Filtro tallas
-$stmtTallas = $conexion->query("SELECT DISTINCT t.nombre FROM tallas t INNER JOIN producto_tallas pt ON t.id_talla = pt.id_talla");
+$stmtTallas = $conexion->query("SELECT DISTINCT t.nombre FROM tallas t INNER JOIN producto_tallas pt ON t.id_talla = pt.id_talla INNER JOIN productos p ON p.id_producto = pt.id_producto WHERE (p.oculto = 0 OR p.oculto IS NULL)");
 $tallas_disponibles = [];
 if($stmtTallas) {
     $tallas_disponibles = $stmtTallas->fetchAll(PDO::FETCH_ASSOC);
@@ -56,7 +56,7 @@ if (!empty($_GET['precio_max'])) {
 }
 
 // Filtro color
-$stmtColores = $conexion->query("SELECT DISTINCT color FROM productos WHERE color IS NOT NULL AND color != ''");
+$stmtColores = $conexion->query("SELECT DISTINCT color FROM productos WHERE color IS NOT NULL AND color != '' AND (oculto = 0 OR oculto IS NULL)");
 $colores_disponibles = $stmtColores->fetchAll(PDO::FETCH_ASSOC);
 
 if (!empty($_GET['color'])) {
@@ -65,7 +65,7 @@ if (!empty($_GET['color'])) {
 }
 
 // Filtro estilo
-$stmtEstilos = $conexion->query("SELECT DISTINCT estilo FROM productos WHERE estilo IS NOT NULL AND estilo != ''");
+$stmtEstilos = $conexion->query("SELECT DISTINCT estilo FROM productos WHERE estilo IS NOT NULL AND estilo != '' AND (oculto = 0 OR oculto IS NULL)");
 $estilos_disponibles = $stmtEstilos->fetchAll(PDO::FETCH_ASSOC);
 
 if (!empty($_GET['estilo'])) {

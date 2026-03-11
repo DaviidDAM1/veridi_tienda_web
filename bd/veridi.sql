@@ -39,6 +39,7 @@ CREATE TABLE productos (
     estilo ENUM('casual','formal','deportivo') NOT NULL,
     material VARCHAR(100),
     id_categoria INT,
+    oculto TINYINT(1) NOT NULL DEFAULT 0,
     fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
     FOREIGN KEY (id_categoria)
@@ -92,9 +93,13 @@ CREATE TABLE usuarios (
     nombre VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
+    foto_perfil VARCHAR(255) NULL,
     rol ENUM('cliente','admin') DEFAULT 'cliente',
     fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+INSERT INTO usuarios (nombre, email, password, rol)
+VALUES ('Administrador Veridi', 'admin@veridi.com', '$2y$10$z83aPWgL14cT47TZO0QH9OgNmO77Pa1BOZblk1.vfC6w3GHHEpfjq', 'admin');
 
 -- ================================
 -- TABLA CARRITO
@@ -185,6 +190,30 @@ CREATE TABLE contacto (
     contrasena VARCHAR(255),
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     leido BOOLEAN DEFAULT FALSE
+);
+
+-- ================================
+-- TABLA VALORACIONES
+-- ================================
+CREATE TABLE valoraciones (
+    id_valoracion INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_pedido INT NOT NULL,
+    estrellas TINYINT NOT NULL,
+    comentario TEXT NULL,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT chk_valoracion_estrellas CHECK (estrellas BETWEEN 1 AND 5),
+
+    UNIQUE KEY uk_valoracion_usuario_pedido (id_usuario, id_pedido),
+
+    FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (id_pedido)
+        REFERENCES pedidos(id_pedido)
+        ON DELETE CASCADE
 );
 
 

@@ -25,7 +25,7 @@ require_once "includes/header.php";
 
         <?php
         // Obtener 3 productos para mostrar
-        $stmt = $conexion->query("SELECT * FROM productos LIMIT 3");
+        $stmt = $conexion->query("SELECT * FROM productos WHERE (oculto = 0 OR oculto IS NULL) LIMIT 3");
         $productosDestacados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (!empty($productosDestacados)):

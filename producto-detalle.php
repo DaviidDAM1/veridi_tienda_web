@@ -26,7 +26,7 @@ $stmt = $conexion->prepare("
     SELECT p.*, c.nombre AS categoria 
     FROM productos p 
     LEFT JOIN categorias c ON p.id_categoria = c.id_categoria 
-    WHERE p.id_producto = :id
+    WHERE p.id_producto = :id AND (p.oculto = 0 OR p.oculto IS NULL)
 ");
 $stmt->bindParam(':id', $idProducto, PDO::PARAM_INT);
 $stmt->execute();
@@ -96,6 +96,7 @@ $stmtRelacionados = $conexion->prepare("
     FROM productos p
     WHERE p.id_categoria = :id_categoria 
     AND p.id_producto != :id_producto
+    AND (p.oculto = 0 OR p.oculto IS NULL)
     LIMIT 4
 ");
 $stmtRelacionados->bindParam(':id_categoria', $producto['id_categoria'], PDO::PARAM_INT);
