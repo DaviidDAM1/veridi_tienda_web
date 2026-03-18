@@ -119,6 +119,18 @@ $fotoPerfilUsuario = trim((string)($perfilUsuario['foto_perfil'] ?? ''));
 if ($fotoPerfilUsuario === '') {
     $fotoPerfilUsuario = 'img/user-default.svg';
 }
+// Ensure session arrays for carrito/deseos exist and compute counts for header badges
+if (!isset($_SESSION['carrito']) || !is_array($_SESSION['carrito'])) {
+    $_SESSION['carrito'] = [];
+}
+if (!isset($_SESSION['deseos']) || !is_array($_SESSION['deseos'])) {
+    $_SESSION['deseos'] = [];
+}
+$cantidadCarrito = 0;
+foreach ($_SESSION['carrito'] as $item) {
+    $cantidadCarrito += (int)($item['cantidad'] ?? 0);
+}
+$cantidadDeseos = count($_SESSION['deseos']);
 ?>
 
 <!DOCTYPE html>
@@ -129,6 +141,7 @@ if ($fotoPerfilUsuario === '') {
     <title><?php echo isset($page_title) ? $page_title . ' - Veridi' : 'Veridi - Tienda de ropa'; ?></title>
     <?php $cssVersion = @filemtime(__DIR__ . '/../css/styles.css') ?: time(); ?>
     <link rel="stylesheet" href="css/styles.css?v=<?php echo $cssVersion; ?>">
+    <link rel="icon" href="img/logoVeridi.png?v=<?php echo $cssVersion; ?>">
     
     <!-- Script para cargar tema guardado inmediatamente -->
     <script>
@@ -174,11 +187,21 @@ if ($fotoPerfilUsuario === '') {
                     <button type="button" class="icon-button profile-btn" id="open-profile-modal" title="Área personal" aria-label="Abrir área personal">
                         <span class="icon">👤</span>
                     </button>
-                    
-                    <a href="carrito.php" class="icon-button carrito-btn" title="Ver carrito" aria-label="Ir al carrito">
-                        <span class="icon">🛒</span>
+
+                    <a href="carrito.php" class="cart-badge icon-only" title="Ver carrito" aria-label="Ir al carrito">
+                        <span aria-hidden="true">🛒</span>
+                        <?php if ((int)($cantidadCarrito ?? 0) > 0): ?>
+                            <span class="badge"><?php echo (int)$cantidadCarrito; ?></span>
+                        <?php endif; ?>
                     </a>
-                    
+
+                    <a href="lista-deseos.php" class="wishlist-badge icon-only" title="Ver favoritos" aria-label="Ir a favoritos">
+                        <span aria-hidden="true">❤️</span>
+                        <?php if ((int)($cantidadDeseos ?? 0) > 0): ?>
+                            <span class="badge"><?php echo (int)$cantidadDeseos; ?></span>
+                        <?php endif; ?>
+                    </a>
+
                     <a href="logout.php" class="nav-link logout-btn" title="Cerrar sesión">Cerrar sesión</a>
                 <?php else: ?>
                     <div class="auth-inline-wrapper" data-auth-default-tab="<?php echo htmlspecialchars($authTab); ?>" data-auth-auto-open="<?php echo $authOpen ? '1' : '0'; ?>">

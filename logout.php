@@ -9,6 +9,6 @@ if (isset($_SESSION['usuario_id'])) {
 }
 
 session_destroy();
-header("Location: bienvenida.php");
+header("Location: index.php");
 exit();
 ?>

@@ -1,0 +1,242 @@
+.producto-detalle-container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+.breadcrumb {
+  font-size: 14px;
+  color: var(--veridi-text-muted);
+  margin-bottom: 30px;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.breadcrumb a {
+  color: var(--veridi-gold);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--veridi-gold-light);
+  text-decoration: underline;
+}
+
+.breadcrumb span {
+  color: var(--veridi-text);
+}
+
+.detalle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  margin-bottom: 80px;
+}
+
+.detalle-imagen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border: 2px solid var(--veridi-gold);
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 500px;
+}
+
+.imagen-grande {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.detalle-info h1 {
+  font-size: 32px;
+  font-family: Georgia, serif;
+  color: var(--veridi-gold);
+  margin: 0 0 20px 0;
+  letter-spacing: 1px;
+}
+
+.detalle-precio {
+  margin-bottom: 30px;
+  padding-bottom: 30px;
+  border-bottom: 2px solid var(--veridi-gold);
+}
+
+.precio-grande {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--veridi-gold);
+}
+
+.detalle-descripcion,
+.detalle-caracteristicas {
+  margin-bottom: 30px;
+}
+
+.detalle-descripcion h3,
+.detalle-caracteristicas h3,
+.detalle-tallas h3 {
+  font-family: Georgia, serif;
+  color: var(--veridi-gold);
+  font-size: 18px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detalle-caracteristicas ul {
+  list-style: none;
+  padding: 0;
+}
+
+.detalle-caracteristicas li {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  color: var(--veridi-text-muted);
+}
+
+.detalle-caracteristicas strong {
+  color: var(--veridi-gold);
+  margin-right: 10px;
+}
+
+.selector-tallas {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+}
+
+.talla-option {
+  position: relative;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.talla-option input[type='radio'] {
+  appearance: none;
+  width: 50px;
+  height: 50px;
+  border: 2px solid var(--veridi-gold);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.talla-option input[type='radio']:checked {
+  background: var(--veridi-gold);
+}
+
+.talla-label {
+  position: absolute;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--veridi-gold);
+  pointer-events: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.talla-option input[type='radio']:checked ~ .talla-label {
+  color: #fff;
+}
+
+.stock-info {
+  font-size: 13px;
+  color: var(--veridi-text-muted);
+  margin-top: 8px;
+}
+
+.detalle-acciones {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+}
+
+.btn-agregar-carrito,
+.btn-favorito {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid var(--veridi-gold);
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--veridi-gold), rgb(201, 160, 39));
+  color: black;
+  text-transform: uppercase;
+}
+
+.btn-favorito {
+  background: transparent;
+  color: var(--veridi-gold);
+}
+
+.btn-favorito.es-favorito {
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.1);
+}
+
+.btn-volver {
+  display: inline-block;
+  color: var(--veridi-gold);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.productos-relacionados {
+  margin-top: 80px;
+  padding-top: 40px;
+  border-top: 2px solid var(--veridi-gold);
+}
+
+.cards-relacionados {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.card-relacionado {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 6px;
+  padding: 15px;
+  text-align: center;
+}
+
+.producto-img-rel {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.precio-rel {
+  color: var(--veridi-gold);
+  font-weight: 700;
+  margin: 10px 0;
+}
+
+.btn-ver-relacionado {
+  display: inline-block;
+  padding: 8px 16px;
+  background: var(--veridi-gold);
+  color: black;
+  border-radius: 4px;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  .detalle-grid {
+    grid-template-columns: 1fr;
+  }
+}

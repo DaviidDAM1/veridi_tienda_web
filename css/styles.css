@@ -3,48 +3,35 @@
    Negro elegante + Dorado del logo
    ======================================== */
 
-:root {
-    /* Colores del logo */
-    --veridi-black: #000000;
-    --veridi-charcoal: #0a0a0a;
-    --veridi-dark: #1a1a1a;
-    --veridi-surface: #222222;
-    --veridi-surface-hover: #2a2a2a;
-    
-    --veridi-gold: #d4af37;
-    --veridi-gold-light: #e8c878;
-    --veridi-gold-dark: #b8942a;
-    --veridi-gold-glow: rgba(212, 175, 55, 0.25);
-    
-    --veridi-text: #f5f5f5;
-    --veridi-text-secondary: #cccccc;
-    --veridi-text-muted: #999999;
-    
-    --veridi-border: #333333;
-    --veridi-danger: #d32f2f;
-    --veridi-success: #388e3c;
+:root{
+    /* Modern neutral palette (dark primary + cyan accent + warm accent) */
+    --v-primary: #0b1220;        /* deep navy background */
+    --v-surface: #0f1724;        /* surface cards */
+    --v-surface-2: #111827;      /* alt surface */
+    --v-accent: #06b6d4;         /* cyan */
+    --v-accent-2: #fb923c;       /* warm orange */
+    --v-muted: #9aa4b2;          /* muted text */
+    --v-text: #e6eef6;           /* main text light */
+    --v-text-strong: #dbe8f5;    /* headings */
+    --v-border: rgba(255,255,255,0.06);
+    --v-glow: rgba(6,182,212,0.12);
+    --v-success: #22c55e;
+    --v-danger: #ef4444;
+    --radius: 10px;
 }
 
 /* TEMA CLARO */
-[data-theme="light"] {
-    --veridi-black: #ffffff;
-    --veridi-charcoal: #fafafa;
-    --veridi-dark: #f0f0f0;
-    --veridi-surface: #f5f5f5;
-    --veridi-surface-hover: #ececec;
-    
-    --veridi-gold: #d4af37;
-    --veridi-gold-light: #e8c878;
-    --veridi-gold-dark: #b8942a;
-    --veridi-gold-glow: rgba(212, 175, 55, 0.2);
-    
-    --veridi-text: #2c2c2c;
-    --veridi-text-secondary: #555555;
-    --veridi-text-muted: #888888;
-    
-    --veridi-border: #e0e0e0;
-    --veridi-danger: #d32f2f;
-    --veridi-success: #388e3c;
+[data-theme="light"]{
+    --v-primary: #f8fafc;    /* very light */
+    --v-surface: #ffffff;
+    --v-surface-2: #f1f5f9;
+    --v-accent: #0ea5b7;
+    --v-accent-2: #fb7849;
+    --v-muted: #6b7280;
+    --v-text: #0f1724;
+    --v-text-strong: #0b1220;
+    --v-border: rgba(15,23,36,0.06);
+    --v-glow: rgba(14,165,183,0.08);
 }
 
 /* Estilos adicionales para tema claro */
@@ -215,11 +202,11 @@ html {
 }
 
 body {
-    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--veridi-charcoal);
-    background-image: linear-gradient(to bottom, var(--veridi-black) 0%, var(--veridi-charcoal) 40%, var(--veridi-dark) 100%);
+    font-family: Inter, 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background-color: var(--v-primary);
+    background-image: linear-gradient(180deg, rgba(8,12,20,0.6), rgba(8,12,20,0.9));
     background-attachment: fixed;
-    color: var(--veridi-text);
+    color: var(--v-text);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -227,15 +214,15 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: Georgia, 'Times New Roman', serif;
-    font-weight: 600;
-    letter-spacing: 0.8px;
-    color: var(--veridi-gold);
+    font-family: Inter, 'Segoe UI', system-ui, sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: var(--v-text-strong);
     margin-bottom: 1rem;
 }
 
 a {
-    color: var(--veridi-gold);
+    color: var(--v-accent);
     text-decoration: none;
     transition: all 0.3s ease;
 }
@@ -263,13 +250,13 @@ main {
 
 .welcome-card {
     width: 100%;
-    max-width: 700px;
+    max-width: 720px;
     text-align: center;
-    background: linear-gradient(135deg, var(--veridi-dark) 0%, var(--veridi-surface) 100%);
-    border: 2px solid var(--veridi-gold);
-    border-radius: 12px;
-    padding: 50px 40px;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.55);
+    background: linear-gradient(180deg, var(--v-surface), var(--v-surface-2));
+    border: 1px solid var(--v-border);
+    border-radius: var(--radius);
+    padding: 48px 36px;
+    box-shadow: 0 8px 30px var(--v-glow);
 }
 
 .welcome-logo {
@@ -299,9 +286,9 @@ main {
     margin-bottom: 50px;
     background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(42, 42, 42, 0.8) 100%), 
                 url('img/logo.png') center/contain no-repeat;
-    border-radius: 12px;
-    border: 2px solid var(--veridi-gold);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(212, 175, 55, 0.05);
+    border-radius: var(--radius);
+    border: 1px solid var(--v-border);
+    box-shadow: 0 12px 40px rgba(2,6,23,0.6), inset 0 0 30px var(--v-glow);
     position: relative;
     overflow: hidden;
     min-height: 400px;
@@ -375,28 +362,139 @@ main {
     box-shadow: 0 12px 35px rgba(212, 175, 55, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.btn-productos:active {
-    transform: translateY(-1px);
+.btn-productos {
+    background: linear-gradient(90deg, var(--v-accent) 0%, var(--v-accent-2) 100%);
+    color: #052026;
+    padding: 12px 36px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: none;
+    letter-spacing: 0.6px;
+    display: inline-block;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 8px 20px rgba(6,182,212,0.08), 0 2px 6px rgba(11,17,32,0.4);
+    position: relative;
+    z-index: 2;
+    border: none;
+    cursor: pointer;
+}
+.btn-productos:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 18px 40px rgba(6,182,212,0.12), 0 6px 18px rgba(11,17,32,0.5);
 }
 
-/* ========================================
-   SEARCH & FILTROS
-   ======================================== */
+/* Theme toggle */
+.theme-toggle {
+    width: 44px;
+    height: 28px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    border: 1px solid var(--v-border);
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px;
+    cursor: pointer;
+    transition: all 0.28s ease;
+}
+.theme-toggle .thumb {
+    width: 20px;
+    height: 20px;
+    background: var(--v-accent);
+    border-radius: 50%;
+    transition: transform 0.28s ease, background 0.28s ease;
+    box-shadow: 0 6px 14px rgba(6,182,212,0.12);
+}
+.theme-toggle[data-theme="dark"] .thumb { transform: translateX(16px); }
 
-.search-section,
-.filtros-section {
-    background: var(--veridi-surface);
-    padding: 25px;
+/* LazyImage / skeleton */
+.lazy-placeholder {
+    background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04));
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+.lazy-placeholder::after{
+    content: '';
+    position: absolute; left: -120%; top: 0; bottom: 0; width: 120%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
+    animation: shimmer 1.6s infinite;
+}
+@keyframes shimmer { 0% { left: -120%; } 100% { left: 120%; } }
+
+.skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.04));
+    border-radius: 8px;
+    min-height: 12px;
+    display: inline-block;
+    width: 100%;
+}
+
+/* Toasts */
+.toast-container {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+}
+.toast {
+    background: linear-gradient(180deg, rgba(2,6,23,0.9), rgba(6,18,31,0.95));
+    color: var(--v-text);
+    padding: 12px 16px;
     border-radius: 12px;
-    margin-bottom: 30px;
-    border: 1px solid var(--veridi-border);
+    box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+    border: 1px solid var(--v-border);
+    min-width: 220px;
+    transform-origin: right bottom;
+    animation: toast-in 0.28s ease;
+}
+@keyframes toast-in { from { transform: translateY(10px) scale(0.98); opacity: 0 } to { transform: translateY(0) scale(1); opacity: 1 } }
+
+/* Header icons: cart and wishlist compact styles */
+.icon-only {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 18px;
+    color: var(--veridi-text);
+    background: transparent;
+    border-radius: 8px;
+    text-decoration: none;
 }
 
-.search-section h3,
-.filtros-section h3 {
+.icon-only span[aria-hidden="true"] {
+    display: inline-block;
+    line-height: 1;
     font-size: 20px;
-    margin-bottom: 15px;
-    color: var(--veridi-gold);
+}
+
+.icon-only .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: var(--veridi-gold);
+    color: var(--veridi-black);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.wishlist-badge span[aria-hidden="true"] {
+    color: #ff4d6d; /* heart color */
+}
+
+.cart-badge:hover,
+.wishlist-badge:hover,
+.icon-only:hover {
+    background: rgba(255,255,255,0.03);
 }
 
 /* ========================================
@@ -1396,6 +1494,11 @@ header {
     background: var(--veridi-gold);
     color: var(--veridi-black);
     transform: translateY(-2px);
+}
+
+.btn-deseo-card.es-favorito {
+    background: var(--veridi-gold);
+    color: var(--veridi-black);
 }
 
 .form-add-carrito {
