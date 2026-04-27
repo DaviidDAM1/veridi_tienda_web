@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { buildBackendAssetUrl } from '../services/api';
+import LazyImage from '../components/ui/LazyImage';
+import { useToast } from '../components/ui/ToastProvider';
 import { openAuthPanel } from '../utils/auth';
 
 function TiendaPage() {
@@ -30,6 +32,7 @@ function TiendaPage() {
   const [draftArray, setDraftArray] = useState([]);
   const [favLoadingId, setFavLoadingId] = useState(null);
   const [favMessage, setFavMessage] = useState('');
+  const { showToast } = useToast();
 
   const filtrosActivos = useMemo(() => {
     const activos = [];
@@ -197,13 +200,16 @@ function TiendaPage() {
         }
       }));
       setFavMessage(data.message || 'Favoritos actualizado.');
+      try { showToast(data.message || 'Favoritos actualizado.', 'success'); } catch (e) {}
     } catch (err) {
       const requiresLogin = err?.response?.data?.requiresLogin;
       if (requiresLogin) {
         setFavMessage('Debes iniciar sesión para añadir favoritos.');
         openAuthPanel('login');
+        try { showToast('Debes iniciar sesión para añadir favoritos.', 'info'); } catch (e) {}
       } else {
         setFavMessage('No se pudo actualizar favoritos.');
+        try { showToast('No se pudo actualizar favoritos.', 'error'); } catch (e) {}
       }
     } finally {
       setFavLoadingId(null);
@@ -353,7 +359,7 @@ function TiendaPage() {
               {productos.length > 0 ? (
                 productos.map((producto) => (
                   <div className="card" key={producto.id_producto}>
-                    <img src={buildBackendAssetUrl(producto.imagen)} alt={producto.nombre} className="producto-img" />
+                    <LazyImage src={producto.imagen} alt={producto.nombre} className="producto-img" style={{ height: 280 }} />
                     <h3>{producto.nombre}</h3>
                     <p>{producto.descripcion}</p>
                     <p>Categoria: {producto.categoria}</p>

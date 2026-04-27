@@ -4,34 +4,50 @@
    ======================================== */
 
 :root{
-    /* Modern neutral palette (dark primary + cyan accent + warm accent) */
-    --v-primary: #0b1220;        /* deep navy background */
-    --v-surface: #0f1724;        /* surface cards */
-    --v-surface-2: #111827;      /* alt surface */
-    --v-accent: #06b6d4;         /* cyan */
-    --v-accent-2: #fb923c;       /* warm orange */
-    --v-muted: #9aa4b2;          /* muted text */
-    --v-text: #e6eef6;           /* main text light */
-    --v-text-strong: #dbe8f5;    /* headings */
-    --v-border: rgba(255,255,255,0.06);
-    --v-glow: rgba(6,182,212,0.12);
-    --v-success: #22c55e;
-    --v-danger: #ef4444;
-    --radius: 10px;
+    /* New clean palette: light-first, white primary + blue accent + warm secondary */
+    --v-primary: #ffffff;      /* main page background (white) */
+    --v-surface: #ffffff;      /* card surface */
+    --v-surface-2: #f8fafc;    /* subtle alternate surface */
+    --v-accent: #2563eb;       /* primary accent: royal blue */
+    --v-accent-2: #fb923c;     /* secondary accent: coral/orange */
+    --v-muted: #6b7280;        /* muted/secondary text */
+    --v-text: #0f1724;         /* primary text (dark) */
+    --v-text-strong: #0b1220;  /* headings */
+    --v-border: rgba(15,23,36,0.06);
+    --v-glow: rgba(37,99,235,0.08);
+    --v-success: #16a34a;
+    --v-danger: #dc2626;
+    --radius: 8px;
+    /* Compatibility aliases for legacy CSS using --veridi-* variables */
+    --veridi-black: #0f1724;
+    --veridi-charcoal: var(--v-primary);
+    --veridi-dark: var(--v-surface);
+    --veridi-surface: var(--v-surface);
+    --veridi-surface-hover: var(--v-surface-2);
+    --veridi-gold: var(--v-accent);
+    --veridi-gold-light: var(--v-accent-2);
+    --veridi-gold-dark: rgba(37,99,235,0.9);
+    --veridi-gold-glow: var(--v-glow);
+    --veridi-text: var(--v-text);
+    --veridi-text-secondary: var(--v-muted);
+    --veridi-text-muted: rgba(15,23,36,0.28);
+    --veridi-border: var(--v-border);
+    --veridi-danger: var(--v-danger);
+    --veridi-success: var(--v-success);
 }
 
-/* TEMA CLARO */
-[data-theme="light"]{
-    --v-primary: #f8fafc;    /* very light */
-    --v-surface: #ffffff;
-    --v-surface-2: #f1f5f9;
-    --v-accent: #0ea5b7;
-    --v-accent-2: #fb7849;
-    --v-muted: #6b7280;
-    --v-text: #0f1724;
-    --v-text-strong: #0b1220;
-    --v-border: rgba(15,23,36,0.06);
-    --v-glow: rgba(14,165,183,0.08);
+/* TEMA OSCURO */
+[data-theme="dark"]{
+    --v-primary: #0f1724;      /* dark slate */
+    --v-surface: #111827;      /* card surface */
+    --v-surface-2: #0b1220;    /* deeper surface */
+    --v-accent: #14b8a6;       /* teal accent */
+    --v-accent-2: #f59e0b;     /* warm secondary accent */
+    --v-muted: #94a3b8;        /* muted/secondary text */
+    --v-text: #e6eef6;         /* main text light */
+    --v-text-strong: #f8fafc;  /* headings */
+    --v-border: rgba(255,255,255,0.06);
+    --v-glow: rgba(20,184,166,0.08);
 }
 
 /* Estilos adicionales para tema claro */
@@ -201,17 +217,102 @@ html {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* ---- Visual polish: typography, cards, buttons, header, micro-interactions ---- */
+:root{
+    --v-radius-lg: 14px;
+    --v-shadow-sm: 0 4px 10px rgba(14,30,60,0.04);
+    --v-shadow-md: 0 8px 20px rgba(14,30,60,0.06);
+}
+
 body {
-    font-family: Inter, 'Segoe UI', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    font-family: Inter, 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     background-color: var(--v-primary);
-    background-image: linear-gradient(180deg, rgba(8,12,20,0.6), rgba(8,12,20,0.9));
-    background-attachment: fixed;
     color: var(--v-text);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    line-height: 1.6;
+    line-height: 1.65;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
 }
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--v-text-strong);
+    line-height: 1.15;
+    margin-bottom: 0.6rem;
+}
+h1 { font-size: 2.25rem; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.25rem; }
+
+/* Header */
+header {
+    background: transparent;
+    border-bottom: 1px solid rgba(15,23,36,0.04);
+}
+.header-container { padding: 14px 20px; align-items: center; display:flex; gap:16px; }
+.nav-principal .nav-link { color: var(--v-text); padding: 8px 10px; border-radius: 8px; transition: background .18s ease, color .18s ease; }
+.nav-principal .nav-link:hover { background: rgba(37,99,235,0.06); color: var(--v-accent); }
+
+/* Cards */
+.card, .producto-card {
+    background: var(--v-surface);
+    border-radius: var(--v-radius-lg);
+    padding: 20px;
+    border: 1px solid var(--v-border);
+    box-shadow: var(--v-shadow-sm);
+    transition: transform .22s ease, box-shadow .22s ease;
+}
+.card:hover, .producto-card:hover { transform: translateY(-6px); box-shadow: var(--v-shadow-md); }
+
+/* Product image */
+.producto-img, .card img.producto-img, .producto-card img {
+    width: 100%;
+    max-width: 320px;
+    height: 260px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin: 0 auto 14px;
+    transition: transform .28s ease, box-shadow .28s ease;
+}
+.card:hover .producto-img, .producto-card:hover img { transform: scale(1.03); box-shadow: 0 10px 30px rgba(37,99,235,0.06); }
+
+/* Buttons (primary / secondary) */
+.btn-primary, .btn-anadir, .btn-agregar-carrito, .btn-ver {
+    background: linear-gradient(90deg, var(--v-accent) 0%, color-mix(in srgb, var(--v-accent) 80%, #ffffff 20%));
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 999px;
+    box-shadow: 0 8px 24px rgba(37,99,235,0.12);
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease;
+}
+.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 18px 40px rgba(37,99,235,0.14); }
+.btn-ghost { background: transparent; border: 1px solid var(--v-border); color: var(--v-text); }
+
+/* Badges */
+.badge { background: var(--v-accent); color: #fff; padding: 4px 8px; border-radius: 999px; font-weight:700; font-size:0.85rem; }
+
+/* Hero tweaks */
+.hero-section { padding: 60px 40px; border-radius: 14px; background: linear-gradient(180deg, var(--v-surface-2), var(--v-surface)); border: 1px solid var(--v-border); }
+.hero-section h2 { color: var(--v-accent); text-shadow: none; }
+
+/* Footer */
+footer.footer { background: linear-gradient(180deg, var(--v-surface-2), var(--v-surface)); border-top: 1px solid var(--v-border); }
+
+/* Utility small improvements */
+.icon-only { color: var(--v-muted); }
+.user-greeting { color: var(--v-muted); font-weight:600; }
+.precio { color: var(--v-accent); font-weight:700; font-size:1.05rem; }
+
+/* Toast style tweak to fit new palette */
+.toast { background: #0b1220; background: linear-gradient(180deg, rgba(2,6,23,0.95), rgba(6,18,31,0.98)); border: 1px solid rgba(255,255,255,0.04); }
+
+/* End visual polish */
+
 
 h1, h2, h3, h4, h5, h6 {
     font-family: Inter, 'Segoe UI', system-ui, sans-serif;

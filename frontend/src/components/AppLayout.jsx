@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import api, { buildBackendAssetUrl, BACKEND_BASE_URL } from '../services/api';
-import ThemeToggle from './ui/ThemeToggle';
+// ThemeToggle component kept in repo but not used; force light theme instead
+import ToastProvider from './ui/ToastProvider';
 
 function normalizeImagePath(path) {
   const value = String(path || '').trim();
@@ -87,6 +88,12 @@ function AppLayout({ children }) {
   useEffect(() => {
     loadUser();
   }, [location.pathname]);
+
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute('data-theme', 'light');
+    } catch (e) {}
+  }, []);
 
   useEffect(() => {
     const handleCounterUpdate = (event) => {
@@ -328,7 +335,7 @@ function AppLayout({ children }) {
   };
 
   return (
-    <>
+    <ToastProvider>
       {!isWelcomePage && (
       <header>
         <div className="header-container">
@@ -354,9 +361,6 @@ function AppLayout({ children }) {
           </div>
 
           <div className="header-right">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginRight: 8 }}>
-              <ThemeToggle />
-            </div>
             <div className="user-section">
               {loadingUser ? null : currentUser ? (
                 <>
@@ -676,7 +680,7 @@ function AppLayout({ children }) {
         </div>
       </footer>
       )}
-    </>
+    </ToastProvider>
   );
 }
 

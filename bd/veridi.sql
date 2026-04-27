@@ -218,77 +218,7 @@ CREATE TABLE valoraciones (
 
 
 
-INSERT INTO productos (nombre, descripcion, precio, color, estilo, material, id_categoria) VALUES
-
--- ================= CAMISETAS (1)
-('Camiseta Essential Blanca', 'Camiseta básica cómoda para uso diario', 19.99, 'Blanco', 'casual', 'Algodón', 1),
-('Camiseta Urban Negra', 'Camiseta moderna estilo urbano', 22.99, 'Negro', 'casual', 'Algodón', 1),
-('Camiseta Sport Dry', 'Camiseta transpirable para deporte', 24.99, 'Azul', 'deportivo', 'Poliéster', 1),
-('Camiseta Premium Slim', 'Camiseta ajustada elegante', 29.99, 'Gris', 'formal', 'Algodón', 1),
-('Camiseta Vintage', 'Camiseta estilo retro', 21.99, 'Verde', 'casual', 'Algodón', 1),
-
--- ================= CHAQUETAS (2)
-('Chaqueta Bomber Classic',  'Chaqueta ligera tipo bomber', 69.99, 'Negro', 'casual', 'Poliéster', 2),
-('Chaqueta Denim Azul', 'Chaqueta vaquera clásica', 74.99, 'Azul', 'casual', 'Algodón', 2),
-('Chaqueta Sport Pro', 'Chaqueta deportiva impermeable', 89.99, 'Rojo', 'deportivo', 'Poliéster', 2),
-('Chaqueta Formal Slim', 'Chaqueta elegante para eventos', 119.99, 'Gris', 'formal', 'Lana', 2),
-('Chaqueta Cuero Urban', 'Chaqueta moderna de cuero sintético', 139.99, 'Marrón', 'casual', 'Cuero', 2),
-
--- ================= ABRIGOS (3)
-('Abrigo Largo Invierno', 'Abrigo cálido para invierno', 159.99, 'Negro', 'formal', 'Lana', 3),
-('Abrigo Casual Urban', 'Abrigo moderno casual', 129.99, 'Gris', 'casual', 'Lana', 3),
-('Abrigo Deportivo Tech', 'Abrigo técnico resistente al frío', 149.99, 'Azul', 'deportivo', 'Poliéster', 3),
-('Abrigo Slim Elegance', 'Abrigo formal ajustado', 169.99, 'Camel', 'formal', 'Lana', 3),
-('Abrigo Parka', 'Parka resistente al agua', 139.99, 'Verde', 'casual', 'Poliéster', 3),
-
--- ================= SUDADERAS (4)
-('Sudadera Basic', 'Sudadera cómoda básica', 39.99, 'Negro', 'casual', 'Algodón', 4),
-('Sudadera Hoodie Sport', 'Sudadera con capucha deportiva', 44.99, 'Azul', 'deportivo', 'Poliéster', 4),
-('Sudadera Minimal', 'Sudadera diseño minimalista', 42.99, 'Blanco', 'casual', 'Algodón', 4),
-('Sudadera Premium', 'Sudadera elegante urbana', 49.99, 'Gris', 'casual', 'Algodón', 4),
-('Sudadera Training Pro', 'Sudadera técnica deportiva', 54.99, 'Rojo', 'deportivo', 'Poliéster', 4),
-
--- ================= PANTALONES (5)
-('Pantalón Chino Beige', 'Pantalón chino elegante', 49.99, 'Beige', 'formal', 'Algodón', 5),
-('Pantalón Jogger', 'Pantalón cómodo deportivo', 39.99, 'Negro', 'deportivo', 'Algodón', 5),
-('Pantalón Slim Fit', 'Pantalón ajustado moderno', 59.99, 'Gris', 'casual', 'Algodón', 5),
-('Pantalón Cargo', 'Pantalón con bolsillos laterales', 54.99, 'Verde', 'casual', 'Algodón', 5),
-('Pantalón Formal Classic', 'Pantalón elegante de vestir', 69.99, 'Azul marino', 'formal', 'Lana', 5),
-
--- ================= VAQUEROS (6)
-('Vaquero Slim Blue', 'Vaquero ajustado azul', 59.99, 'Azul', 'casual', 'Algodón', 6),
-('Vaquero Regular Fit', 'Vaquero clásico', 54.99, 'Azul oscuro', 'casual', 'Algodón', 6),
-('Vaquero Destroyed', 'Vaquero roto moderno', 64.99, 'Azul claro', 'casual', 'Algodón', 6),
-('Vaquero Black Edition', 'Vaquero negro elegante', 69.99, 'Negro', 'casual', 'Algodón', 6),
-('Vaquero Stretch Pro', 'Vaquero elástico cómodo', 72.99, 'Gris', 'casual', 'Algodón', 6),
-
--- ================= CALZADO (7)
-('Zapatillas Urban', 'Zapatillas casual urbanas', 79.99, 'Blanco', 'casual', 'Cuero', 7),
-('Zapatillas Running Pro', 'Zapatillas deportivas', 89.99, 'Azul', 'deportivo', 'Poliéster', 7),
-('Zapato Formal Elegance', 'Zapato de vestir elegante', 119.99, 'Negro', 'formal', 'Cuero', 7),
-('Botines Casual', 'Botines modernos', 99.99, 'Marrón', 'casual', 'Cuero', 7),
-('Sneakers Classic', 'Sneakers estilo clásico', 74.99, 'Gris', 'casual', 'Cuero', 7),
-
--- ================= GORRAS (8)
-('Gorra Classic', 'Gorra básica ajustable', 19.99, 'Negro', 'casual', 'Algodón', 8),
-('Gorra Sport', 'Gorra deportiva transpirable', 22.99, 'Azul', 'deportivo', 'Poliéster', 8),
-('Gorra Snapback', 'Gorra estilo urbano', 24.99, 'Rojo', 'casual', 'Algodón', 8),
-('Gorra Premium', 'Gorra elegante minimalista', 29.99, 'Blanco', 'casual', 'Algodón', 8),
-('Gorra Training', 'Gorra ligera para deporte', 21.99, 'Gris', 'deportivo', 'Poliéster', 8),
-
--- ================= CALCETINES (9)
-('Calcetines Sport Pack', 'Pack de 3 calcetines deportivos', 14.99, 'Blanco', 'deportivo', 'Algodón', 9),
-('Calcetines Classic', 'Calcetines negros elegantes', 12.99, 'Negro', 'formal', 'Algodón', 9),
-('Calcetines Urban', 'Calcetines modernos casual', 13.99, 'Gris', 'casual', 'Algodón', 9),
-('Calcetines Pro Running', 'Calcetines técnicos', 16.99, 'Azul', 'deportivo', 'Poliéster', 9),
-('Calcetines Premium', 'Calcetines alta calidad', 18.99, 'Negro', 'formal', 'Algodón', 9),
-
--- ================= ACCESORIOS (10)
-('Cinturón Cuero', 'Cinturón clásico elegante', 34.99, 'Marrón', 'formal', 'Cuero', 10),
-('Mochila Urban', 'Mochila moderna casual', 49.99, 'Negro', 'casual', 'Poliéster', 10),
-('Bolso Deportivo', 'Bolso para gimnasio', 39.99, 'Azul', 'deportivo', 'Poliéster', 10),
-('Bufanda Lana', 'Bufanda cálida de invierno', 29.99, 'Gris', 'casual', 'Lana', 10),
-('Pulsera Minimal', 'Pulsera estilo moderno', 19.99, 'Negro', 'casual', 'Cuero', 10);
+-- INSERT INTO productos → añade aquí tus productos
 
 
 INSERT INTO producto_tallas (id_producto, id_talla, stock)
