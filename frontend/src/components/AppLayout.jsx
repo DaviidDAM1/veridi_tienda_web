@@ -22,7 +22,7 @@ function formatStars(count) {
 
 function AppLayout({ children }) {
   const location = useLocation();
-  const isWelcomePage = location.pathname === '/bienvenida';
+  const isWelcomePage = location.pathname === '/' || location.pathname === '/bienvenida';
   const authWrapperRef = useRef(null);
 
   const [loadingUser, setLoadingUser] = useState(true);
@@ -341,15 +341,15 @@ function AppLayout({ children }) {
         <div className="header-container">
           <div className="header-left">
             <div className="logo">
-              <Link to="/" title="Volver a inicio">
-                <img src={buildBackendAssetUrl('img/Logo.png')} alt="Veridi Logo" className="logo-img" />
+              <Link to="/inicio" title="Volver a inicio">
+                <img src={buildBackendAssetUrl('imgnuevas/LogoVeridi.png')} alt="Veridi Logo" className="logo-img" />
               </Link>
             </div>
           </div>
 
           <div className="header-center">
             <nav className="nav-principal">
-              <Link to="/" className="nav-link nav-main">Inicio</Link>
+              <Link to="/inicio" className="nav-link nav-main">Inicio</Link>
               <Link to="/tienda" className="nav-link nav-main">Catálogo</Link>
               <Link to="/contacto" className="nav-link nav-main">Contacto</Link>
               <Link to="/sobre-nosotros" className="nav-link nav-main">Sobre nosotros</Link>

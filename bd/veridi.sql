@@ -218,10 +218,71 @@ CREATE TABLE valoraciones (
 
 
 
--- INSERT INTO productos → añade aquí tus productos
+-- ================================
+-- INSERTS DE PRODUCTOS (basados en /imgnuevas)
+-- ================================
+INSERT INTO productos (nombre, descripcion, precio, color, estilo, material, id_categoria) VALUES
+('Camiseta Veridi Blanca', 'Camiseta basica blanca con branding Veridi.', 19.90, 'Blanco', 'casual', 'Algodon', 1),
+('Camiseta Deportiva Negra', 'Camiseta tecnica transpirable para entrenamiento.', 24.90, 'Negro', 'deportivo', 'Poliester tecnico', 1),
+('Camiseta Deportiva Azul', 'Camiseta tecnica azul de secado rapido.', 24.90, 'Azul', 'deportivo', 'Poliester tecnico', 1),
+('Camiseta Deportiva Blanca', 'Camiseta deportiva blanca ligera y comoda.', 24.90, 'Blanco', 'deportivo', 'Poliester tecnico', 1),
+('Camiseta Veridi Gris', 'Camiseta gris de uso diario con corte regular.', 21.90, 'Gris', 'casual', 'Algodon', 1),
+('Camiseta Negra Logo Blanco', 'Camiseta negra con logo frontal en contraste.', 22.90, 'Negro', 'casual', 'Algodon', 1),
+('Camiseta Veridi Rosa', 'Camiseta rosa suave para look urbano.', 21.90, 'Rosa', 'casual', 'Algodon', 1),
+('Camiseta Veridi Azul', 'Camiseta azul clasica con identidad Veridi.', 21.90, 'Azul', 'casual', 'Algodon', 1),
+('Camiseta Veridi Negra', 'Camiseta negra versatil para cualquier combinacion.', 21.90, 'Negro', 'casual', 'Algodon', 1),
+('Polo Blanco Veridi', 'Polo blanco de estilo limpio y elegante.', 29.90, 'Blanco', 'formal', 'Algodon pique', 1),
+('Polo Negro Veridi', 'Polo negro de estilo minimal y atemporal.', 29.90, 'Negro', 'formal', 'Algodon pique', 1),
+
+('Chaqueta Blanca con Capucha', 'Chaqueta ligera blanca con capucha ajustable.', 49.90, 'Blanco', 'casual', 'Poliester', 2),
+('Chaqueta Bomber Negra', 'Bomber negra de estilo urbano.', 59.90, 'Negro', 'casual', 'Nailon', 2),
+('Chaqueta Bomber Verde', 'Bomber verde para outfit streetwear.', 59.90, 'Verde', 'casual', 'Nailon', 2),
+('Chaqueta Negra con Capucha', 'Chaqueta negra comoda para entretiempo.', 54.90, 'Negro', 'deportivo', 'Poliester', 2),
+('Chaqueta Vaquera Azul', 'Chaqueta denim azul de corte clasico.', 64.90, 'Azul', 'casual', 'Denim', 2),
+('Chaqueta Vaquera Azul Oscuro', 'Chaqueta vaquera en tono azul oscuro.', 66.90, 'Azul oscuro', 'casual', 'Denim', 2),
+
+('Abrigo Plumas Veridi', 'Abrigo acolchado para dias frios.', 89.90, 'Negro', 'casual', 'Poliester acolchado', 3),
+('Abrigo Plumas Veridi Cani', 'Abrigo plumas de estilo marcado y urbano.', 94.90, 'Negro', 'casual', 'Poliester acolchado', 3),
+
+('Sudadera Negra Veridi', 'Sudadera negra basica para uso diario.', 39.90, 'Negro', 'casual', 'Algodon felpado', 4),
+
+('Pantalon Chandal Corto Gris', 'Short de chandal gris para deporte y descanso.', 27.90, 'Gris', 'deportivo', 'Algodon', 5),
+('Pantalon Chandal Corto Rosa', 'Short deportivo rosa de tacto suave.', 27.90, 'Rosa', 'deportivo', 'Algodon', 5),
+('Pantalon Chandal Largo Azul', 'Pantalon largo azul de entrenamiento.', 34.90, 'Azul', 'deportivo', 'Algodon', 5),
+('Pantalon Chandal Largo Gris', 'Pantalon largo gris con ajuste comodo.', 34.90, 'Gris', 'deportivo', 'Algodon', 5),
+('Pantalon Chandal Largo Negro', 'Pantalon largo negro versatil para gimnasio.', 34.90, 'Negro', 'deportivo', 'Algodon', 5),
+('Pantalon Chandal Largo Rosa', 'Pantalon largo rosa para look athleisure.', 34.90, 'Rosa', 'deportivo', 'Algodon', 5),
+('Pantalon Chandal Corto Azul Claro', 'Short de chandal azul claro.', 27.90, 'Azul claro', 'deportivo', 'Algodon', 5),
+('Pantalon Chandal Corto Blanco', 'Short blanco de chandal para verano.', 27.90, 'Blanco', 'deportivo', 'Algodon', 5),
+('Pantalon Chandal Corto Negro', 'Short negro deportivo basico.', 27.90, 'Negro', 'deportivo', 'Algodon', 5),
+
+('Vaqueros Azules Claros', 'Jeans azul claro de corte regular.', 44.90, 'Azul claro', 'casual', 'Denim', 6),
+('Vaqueros Azules Claros Rotos', 'Jeans azul claro con roturas frontales.', 46.90, 'Azul claro', 'casual', 'Denim', 6),
+('Vaqueros Cortos Azules', 'Bermuda vaquera azul para temporada calida.', 36.90, 'Azul', 'casual', 'Denim', 6),
+('Vaqueros Cortos Azules Rotos', 'Bermuda vaquera azul con acabado roto.', 37.90, 'Azul', 'casual', 'Denim', 6),
+('Vaqueros Cortos Negros', 'Bermuda vaquera negra de estilo urbano.', 36.90, 'Negro', 'casual', 'Denim', 6),
+('Vaqueros Cortos Negros Rotos', 'Bermuda vaquera negra con roturas.', 37.90, 'Negro', 'casual', 'Denim', 6),
+('Vaqueros Negros', 'Jeans negros para combinacion formal o casual.', 44.90, 'Negro', 'casual', 'Denim', 6),
+('Vaqueros Negros Rotos', 'Jeans negros con detalles desgastados.', 46.90, 'Negro', 'casual', 'Denim', 6),
+
+('Gorra Azul Classic', 'Gorra azul de visera curva.', 18.90, 'Azul', 'casual', 'Algodon', 8),
+('Gorra Azul Sport', 'Gorra azul de estilo deportivo.', 19.90, 'Azul', 'deportivo', 'Algodon', 8),
+('Gorra Blanca Veridi', 'Gorra blanca con logo frontal.', 18.90, 'Blanco', 'casual', 'Algodon', 8),
+('Gorra Negra Veridi', 'Gorra negra basica para diario.', 18.90, 'Negro', 'casual', 'Algodon', 8),
+('Gorra Negra Total', 'Gorra negra monocromatica.', 19.90, 'Negro', 'casual', 'Algodon', 8),
+('Gorra Roja Veridi', 'Gorra roja para un look llamativo.', 18.90, 'Rojo', 'casual', 'Algodon', 8),
+
+('Calcetines Blancos Veridi', 'Calcetines blancos comodos para uso diario.', 9.90, 'Blanco', 'deportivo', 'Algodon', 9),
+('Calcetines Negros Veridi', 'Calcetines negros resistentes.', 9.90, 'Negro', 'deportivo', 'Algodon', 9),
+
+('Boxer Veridi', 'Prenda interior comoda de ajuste elastico.', 12.90, 'Negro', 'casual', 'Algodon elastico', 10);
 
 
 INSERT INTO producto_tallas (id_producto, id_talla, stock)
 SELECT p.id_producto, t.id_talla, 20
 FROM productos p
-CROSS JOIN tallas t;
+CROSS JOIN tallas t
+LEFT JOIN producto_tallas pt
+    ON pt.id_producto = p.id_producto
+   AND pt.id_talla = t.id_talla
+WHERE pt.id_producto IS NULL;

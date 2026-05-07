@@ -1,112 +1,120 @@
 import { Link } from 'react-router-dom';
 
 function AboutPage() {
+  const metricas = [
+    { valor: '+12k', etiqueta: 'Clientes satisfechos' },
+    { valor: '48h', etiqueta: 'Enviamos tu pedido' },
+    { valor: '98%', etiqueta: 'Valoraciones positivas' }
+  ];
+
+  const pilares = [
+    {
+      titulo: 'Diseno con caracter',
+      texto: 'Creamos prendas con identidad propia para que tu look se note sin esfuerzo.'
+    },
+    {
+      titulo: 'Calidad que dura',
+      texto: 'Seleccionamos tejidos resistentes y comodos para que cada pieza rinda temporada tras temporada.'
+    },
+    {
+      titulo: 'Produccion consciente',
+      texto: 'Reducimos desperdicio y cuidamos cada proceso para construir una moda mas responsable.'
+    }
+  ];
+
+  const hitos = [
+    {
+      ano: '2021',
+      titulo: 'Nace Veridi',
+      texto: 'Comenzamos con una coleccion corta enfocada en basicos premium de estilo urbano.'
+    },
+    {
+      ano: '2023',
+      titulo: 'Comunidad en crecimiento',
+      texto: 'Miles de clientes empezaron a formar parte de la familia Veridi dentro y fuera de Espana.'
+    },
+    {
+      ano: 'Hoy',
+      titulo: 'Evolucion constante',
+      texto: 'Seguimos innovando en diseno, fit y experiencia para ofrecer moda con personalidad.'
+    }
+  ];
+
   return (
-    <main>
-      <section className="pagina-estatica">
-        <div className="hero-section">
-          <h1>Sobre Veridi</h1>
-          <p className="hero-subtitle">Lujo, calidad y diseño en cada prenda</p>
-        </div>
+    <main className="about-page">
+      <section className="about-hero">
+        <div className="about-hero-glow" aria-hidden="true"></div>
+        <span className="about-badge">Sobre Veridi</span>
+        <h1>Moda urbana con alma premium</h1>
+        <p>
+          En Veridi combinamos estilo contemporaneo, materiales de calidad y una vision clara:
+          ayudarte a vestir con confianza todos los dias.
+        </p>
 
-        <div className="content-section">
-          <h2>Quiénes Somos</h2>
+        <div className="about-metrics">
+          {metricas.map((item) => (
+            <article key={item.etiqueta} className="about-metric-card">
+              <strong>{item.valor}</strong>
+              <span>{item.etiqueta}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="about-section about-story">
+        <div className="about-story-content">
+          <h2>Quienes somos</h2>
           <p>
-            Veridi es una marca contemporánea de moda que nace con la visión de ofrecer prendas de alta calidad,
-            diseño innovador y atención meticulosa al detalle. Nos dedicamos a crear colecciones que combinan
-            la elegancia con la comodidad, permitiendo que cada cliente se sienta seguro y estiloso en cualquier ocasión.
+            Veridi nace para cerrar la distancia entre una marca con identidad y la comodidad real del dia a dia.
+            Cada coleccion se construye buscando equilibrio entre presencia, versatilidad y calidad.
           </p>
           <p>
-            Desde nuestros inicios, hemos mantenido un compromiso inquebrantable con la excelencia. Cada prenda que
-            sale de nuestro almacén es resultado de un proceso cuidadoso de diseño, selección de materiales y control de calidad.
+            Nos obsesionan los detalles: patronaje, acabados y seleccion de tejidos. El objetivo es simple,
+            que cada prenda te quede bien, dure y transmita actitud.
           </p>
         </div>
 
-        <div className="content-section">
-          <h2>Nuestra Historia</h2>
+        <aside className="about-quote-card">
           <p>
-            Fundada con la pasión de revolucionar la moda urbana, Veridi surge como respuesta a la demanda de
-            prendas que combinen lujo asequible con diseño contemporáneo. Lo que comenzó como un pequeño proyecto
-            ha evolucionado hasta convertirse en una marca reconocida por su compromiso con la calidad y la innovación.
+            "No seguimos tendencias por inercia. Creamos piezas para que marquen tu estilo y no al reves."
           </p>
-          <p>
-            A lo largo de los años, hemos trabajado incansablemente para construir una comunidad de clientes leales
-            que comparten nuestros valores y aprecian el cuidado que ponemos en cada detalle. Nuestro crecimiento
-            refleja la confianza que han depositado en nosotros.
-          </p>
+          <span>Equipo Veridi</span>
+        </aside>
+      </section>
+
+      <section className="about-section">
+        <h2>Nuestros pilares</h2>
+        <div className="about-pillars-grid">
+          {pilares.map((pilar) => (
+            <article key={pilar.titulo} className="about-pillar-card">
+              <h3>{pilar.titulo}</h3>
+              <p>{pilar.texto}</p>
+            </article>
+          ))}
         </div>
+      </section>
 
-        <div className="content-trio">
-          <div className="trio-card">
-            <h3>🎯 Nuestra Misión</h3>
-            <p>
-              Crear prendas de moda que empoderen a nuestros clientes, ofreciendo calidad premium,
-              diseño contemporáneo y comodidad en cada colección. Nos propusimos ser los aliados
-              perfectos en el estilo de vida de nuestros usuarios.
-            </p>
-          </div>
-
-          <div className="trio-card">
-            <h3>🌟 Nuestra Visión</h3>
-            <p>
-              Ser una marca de referencia internacional en moda urbana, reconocida por combinar
-              diseño innovador con sostenibilidad y responsabilidad social. Aspiramos a ser la
-              elección preferida de clientes conscientes del estilo.
-            </p>
-          </div>
-
-          <div className="trio-card">
-            <h3>💎 Nuestros Valores</h3>
-            <p>
-              <strong>Calidad:</strong> Materiales premium y procesos exhaustivos.
-              <strong>Diseño:</strong> Innovación y creatividad en cada colección.
-              <strong>Integridad:</strong> Transparencia con nuestros clientes.
-              <strong>Sostenibilidad:</strong> Responsabilidad ambiental y social.
-            </p>
-          </div>
+      <section className="about-section about-timeline-section">
+        <h2>Como hemos evolucionado</h2>
+        <div className="about-timeline">
+          {hitos.map((hito) => (
+            <article key={hito.ano + hito.titulo} className="about-timeline-item">
+              <span className="about-year">{hito.ano}</span>
+              <h3>{hito.titulo}</h3>
+              <p>{hito.texto}</p>
+            </article>
+          ))}
         </div>
+      </section>
 
-        <div className="content-section commitment">
-          <h2>Nuestro Compromiso</h2>
-          <div className="commitment-grid">
-            <div className="commitment-item">
-              <h4>✓ Calidad Premium</h4>
-              <p>Seleccionamos cuidadosamente cada material para asegurar durabilidad y confort excepcional.</p>
-            </div>
-            <div className="commitment-item">
-              <h4>✓ Diseño Exclusivo</h4>
-              <p>Nuestro equipo de diseñadores crea colecciones únicas que reflejan las tendencias actuales.</p>
-            </div>
-            <div className="commitment-item">
-              <h4>✓ Atención al Cliente</h4>
-              <p>Estamos disponibles para resolver tus dudas y garantizar tu experiencia de compra perfecta.</p>
-            </div>
-            <div className="commitment-item">
-              <h4>✓ Sostenibilidad</h4>
-              <p>Nos esforzamos por minimizar nuestro impacto ambiental en cada aspecto de nuestro negocio.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="content-section why-veridi">
-          <h2>¿Por Qué Elegir Veridi?</h2>
-          <ul className="benefits-list">
-            <li><strong>Colecciones Curadas:</strong> Cada temporada presentamos diseños exclusivos que anticipan las tendencias.</li>
-            <li><strong>Garantía de Calidad:</strong> Todas nuestras prendas pasan por rigurosos controles de calidad.</li>
-            <li><strong>Precio Justo:</strong> Ofrecemos lujo accesible sin comprometer la calidad.</li>
-            <li><strong>Entrega Rápida:</strong> Procesamos y enviamos tus pedidos con máxima rapidez.</li>
-            <li><strong>Devoluciones Fáciles:</strong> Si no estás completamente satisfecho, ofrecemos devoluciones sin complicaciones.</li>
-            <li><strong>Comunidad:</strong> Forma parte de una comunidad de amantes de la moda y el buen gusto.</li>
-          </ul>
-        </div>
-
-        <div className="content-section contact-cta">
-          <h2>¿Contacta Conmigo?</h2>
-          <p>
-            Nos encantaría saber de ti. Si tienes preguntas, sugerencias o simplemente quieres saludar,
-            no dudes en <Link to="/contacto">ponerte en contacto con nosotros</Link>.
-          </p>
-          <p>Estoy aquí para ayudarte y escuchar tus comentarios.</p>
+      <section className="about-section about-cta">
+        <h2>Descubre la experiencia Veridi</h2>
+        <p>
+          Si quieres ver nuestras colecciones o resolver cualquier duda, estamos para ayudarte.
+        </p>
+        <div className="about-cta-actions">
+          <Link to="/tienda" className="about-btn about-btn-primary">Ver catalogo</Link>
+          <Link to="/contacto" className="about-btn about-btn-ghost">Hablar con nosotros</Link>
         </div>
       </section>
     </main>

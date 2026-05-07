@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { buildBackendAssetUrl } from '../services/api';
+import PlasmaWave from '../components/ui/PlasmaWave';
 
 function HomePage() {
   const [loadingDestacados, setLoadingDestacados] = useState(true);
@@ -56,18 +57,23 @@ function HomePage() {
 
   return (
     <main>
-      <div className="theme-selector">
-        <span className="theme-label">Personaliza tu experiencia:</span>
-        <div className="theme-buttons">
-          <button className="theme-btn" title="Modo Claro" aria-label="Cambiar a tema claro">☀️</button>
-          <button className="theme-btn" title="Modo Oscuro" aria-label="Cambiar a tema oscuro">🌙</button>
-        </div>
-      </div>
-
       <div className="hero-section">
-        <h2>Bienvenido a Veridi 👕</h2>
-        <p>Descubre nuestra colección exclusiva de ropa de calidad</p>
-        <Link to="/tienda" className="btn-productos">Ver Tienda</Link>
+        <div className="hero-plasma-bg" aria-hidden="true">
+          <PlasmaWave
+            colors={['#8b5cf6', '#06b6d4']}
+            speed1={0.05}
+            speed2={0.04}
+            bend1={1}
+            bend2={0.5}
+            focalLength={0.8}
+          />
+        </div>
+
+        <div className="hero-content">
+          <h2>Bienvenido a Veridi</h2>
+          <p>Descubre nuestra colección exclusiva de ropa de calidad</p>
+          <Link to="/tienda" className="btn-productos">Ver Tienda</Link>
+        </div>
       </div>
 
       <div className="cards">

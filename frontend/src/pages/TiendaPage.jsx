@@ -2,9 +2,64 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { buildBackendAssetUrl } from '../services/api';
-import LazyImage from '../components/ui/LazyImage';
 import { useToast } from '../components/ui/ToastProvider';
 import { openAuthPanel } from '../utils/auth';
+
+const PRODUCTOS_POR_PAGINA = 16;
+
+const COLOR_SWATCH_MAP = {
+  rojo: '#ef4444',
+  red: '#ef4444',
+  granate: '#7f1d1d',
+  burdeos: '#881337',
+  rosa: '#ec4899',
+  fucsia: '#d946ef',
+  morado: '#8b5cf6',
+  violeta: '#7c3aed',
+  lila: '#a78bfa',
+  azul: '#2563eb',
+  celeste: '#38bdf8',
+  turquesa: '#14b8a6',
+  verde: '#22c55e',
+  lima: '#84cc16',
+  amarillo: '#facc15',
+  naranja: '#f97316',
+  marron: '#7c2d12',
+  marrón: '#7c2d12',
+  beige: '#d6c6a6',
+  crema: '#f5e7c6',
+  blanco: '#f8fafc',
+  negro: '#111827',
+  gris: '#6b7280',
+  grisclaro: '#d1d5db',
+  grisoscuro: '#374151',
+  plateado: '#cbd5e1',
+  dorado: '#f59e0b'
+};
+
+const toColorKey = (value) => String(value || '').toLowerCase().replace(/\s+/g, '');
+
+const getColorSwatchStyle = (value) => {
+  const raw = String(value || '').trim();
+  const normalized = toColorKey(raw);
+
+  if (COLOR_SWATCH_MAP[normalized]) {
+    return { backgroundColor: COLOR_SWATCH_MAP[normalized] };
+  }
+
+  // Keep support for hex/rgb/hsl values coming directly from backend.
+  if (/^(#|rgb\(|rgba\(|hsl\(|hsla\()/i.test(raw)) {
+    return { backgroundColor: raw };
+  }
+
+  return { background: 'linear-gradient(135deg, #94a3b8, #64748b)' };
+};
+
+const formatColorLabel = (value) => {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  return text.charAt(0).toUpperCase() + text.slice(1);
+};
 
 function TiendaPage() {
   const [loading, setLoading] = useState(true);
@@ -45,6 +100,34 @@ function TiendaPage() {
     return activos;
   }, [query]);
 
+  const paginasVisibles = useMemo(() => {
+    const total = paginacion.totalPaginas || 1;
+    const actual = paginacion.paginaActual || 1;
+
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, index) => index + 1);
+    }
+
+    const pages = [1];
+    const start = Math.max(2, actual - 1);
+    const end = Math.min(total - 1, actual + 1);
+
+    if (start > 2) {
+      pages.push('...prev');
+    }
+
+    for (let page = start; page <= end; page += 1) {
+      pages.push(page);
+    }
+
+    if (end < total - 1) {
+      pages.push('...next');
+    }
+
+    pages.push(total);
+    return pages;
+  }, [paginacion]);
+
   useEffect(() => {
     const fetchProductos = async () => {
       setLoading(true);
@@ -56,7 +139,8 @@ function TiendaPage() {
           ordenar: query.ordenar || undefined,
           precio_min: query.precio_min || undefined,
           precio_max: query.precio_max || undefined,
-          pagina: query.pagina
+          pagina: query.pagina,
+          limite: PRODUCTOS_POR_PAGINA
         };
 
         if (query.talla.length) params.talla = query.talla;
@@ -216,9 +300,31 @@ function TiendaPage() {
     }
   };
 
+  const handleGoToPage = (pagina) => {
+    if (!Number.isInteger(pagina)) return;
+    if (pagina < 1 || pagina > paginacion.totalPaginas) return;
+    if (pagina === paginacion.paginaActual) return;
+
+    setQuery((prev) => ({ ...prev, pagina }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <>
       <div className="search-section">
+        <div className="catalog-hero-card">
+          <span className="catalog-eyebrow">Catálogo Veridi</span>
+          <h2>Encuentra tu próximo look</h2>
+          <p>Filtros rápidos, diseño más inmersivo y una navegación por páginas para explorar mejor cada colección.</p>
+          {!loading && !error && (
+            <div className="catalog-stats">
+              <span>{paginacion.totalProductos} productos</span>
+              <span>Página {paginacion.paginaActual} de {paginacion.totalPaginas}</span>
+              <span>{PRODUCTOS_POR_PAGINA} por página</span>
+            </div>
+          )}
+        </div>
+
         <h3>Encuentra el producto que estás buscando</h3>
 
         <div className="barra-busqueda">
@@ -331,8 +437,8 @@ function TiendaPage() {
                   <label className={`checkbox-container ${modalFiltro === 'color' ? 'color-checkbox' : ''}`} key={item}>
                     <input type="checkbox" value={item} checked={draftArray.includes(item)} onChange={() => toggleDraftArray(item)} />
                     <span className={`color-label ${modalFiltro === 'color' ? 'color-filter-label' : ''}`}>
-                      {modalFiltro === 'color' && <span className="color-swatch" style={{ backgroundColor: item }}></span>}
-                      {item}
+                      {modalFiltro === 'color' && <span className="color-swatch" style={getColorSwatchStyle(item)}></span>}
+                      {modalFiltro === 'color' ? formatColorLabel(item) : item}
                     </span>
                   </label>
                 ))}
@@ -346,7 +452,7 @@ function TiendaPage() {
         )}
       </div>
 
-      <main>
+      <main className="catalog-main">
         {loading && <p>Cargando productos...</p>}
         {error && <p className="error-message">{error}</p>}
         {!loading && !error && favMessage && (
@@ -355,17 +461,19 @@ function TiendaPage() {
 
         {!loading && !error && (
           <>
-            <div className="cards">
+            <div className="cards catalog-grid">
               {productos.length > 0 ? (
                 productos.map((producto) => (
-                  <div className="card" key={producto.id_producto}>
-                    <LazyImage src={producto.imagen} alt={producto.nombre} className="producto-img" style={{ height: 280 }} />
+                  <div className="card catalog-card" key={producto.id_producto}>
+                    <div className="catalog-card-top">
+                      <span className="catalog-chip">{producto.categoria}</span>
+                    </div>
+                    <img src={buildBackendAssetUrl(producto.imagen)} alt={producto.nombre} className="producto-img" />
                     <h3>{producto.nombre}</h3>
                     <p>{producto.descripcion}</p>
-                    <p>Categoria: {producto.categoria}</p>
                     <p className="precio">{Number(producto.precio).toFixed(2)} €</p>
                     <div className="botones-card">
-                      <Link className="btn-anadir" to={`/producto/${producto.id_producto}`}>Agregar al carrito</Link>
+                      <Link className="btn-anadir" to={`/producto/${producto.id_producto}`}>Ver producto</Link>
                       <button
                         type="button"
                         className={`btn-deseo-card ${producto.es_favorito ? 'es-favorito' : ''}`}
@@ -387,24 +495,30 @@ function TiendaPage() {
             {paginacion.totalPaginas > 1 && (
               <div className="paginacion">
                 {paginacion.paginaActual > 1 && (
-                  <button type="button" onClick={() => setQuery((prev) => ({ ...prev, pagina: prev.pagina - 1 }))}>
+                  <button type="button" className="paginacion-nav" onClick={() => handleGoToPage(paginacion.paginaActual - 1)}>
                     &laquo; Anterior
                   </button>
                 )}
 
-                {Array.from({ length: paginacion.totalPaginas }, (_, index) => index + 1).map((pagina) => (
-                  <button
-                    key={pagina}
-                    type="button"
-                    onClick={() => setQuery((prev) => ({ ...prev, pagina }))}
-                    style={pagina === paginacion.paginaActual ? { fontWeight: 'bold' } : undefined}
-                  >
-                    {pagina}
-                  </button>
-                ))}
+                {paginasVisibles.map((item) => {
+                  if (typeof item !== 'number') {
+                    return <span key={item} className="paginacion-ellipsis">…</span>;
+                  }
+
+                  return (
+                    <button
+                      key={item}
+                      type="button"
+                      className={item === paginacion.paginaActual ? 'active' : ''}
+                      onClick={() => handleGoToPage(item)}
+                    >
+                      {item}
+                    </button>
+                  );
+                })}
 
                 {paginacion.paginaActual < paginacion.totalPaginas && (
-                  <button type="button" onClick={() => setQuery((prev) => ({ ...prev, pagina: prev.pagina + 1 }))}>
+                  <button type="button" className="paginacion-nav" onClick={() => handleGoToPage(paginacion.paginaActual + 1)}>
                     Siguiente &raquo;
                   </button>
                 )}

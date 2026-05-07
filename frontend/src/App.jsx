@@ -18,7 +18,8 @@ function App() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<WelcomePage />} />
+        <Route path="/inicio" element={<HomePage />} />
         <Route path="/tienda" element={<TiendaPage />} />
         <Route path="/producto/:id" element={<ProductDetailPage />} />
         <Route path="/carrito" element={<CartPage />} />

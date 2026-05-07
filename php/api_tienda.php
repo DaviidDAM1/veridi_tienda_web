@@ -38,7 +38,8 @@ function getArrayParam(string $key): array
     return [];
 }
 
-$productosPorPagina = 16;
+$limiteSolicitado = isset($_GET['limite']) ? (int)$_GET['limite'] : 0;
+$productosPorPagina = $limiteSolicitado > 0 ? min(200, $limiteSolicitado) : 1000;
 $paginaActual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
 $inicio = ($paginaActual - 1) * $productosPorPagina;
 

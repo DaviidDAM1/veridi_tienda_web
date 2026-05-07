@@ -149,7 +149,7 @@ function ProductDetailPage() {
   return (
     <main className="producto-detalle-container">
       <div className="breadcrumb">
-        <Link to="/">Inicio</Link> &gt;
+        <Link to="/inicio">Inicio</Link> &gt;
         <Link to="/tienda">Tienda</Link> &gt;
         <span>{producto.nombre}</span>
       </div>

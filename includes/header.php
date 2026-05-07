@@ -141,12 +141,12 @@ $cantidadDeseos = count($_SESSION['deseos']);
     <title><?php echo isset($page_title) ? $page_title . ' - Veridi' : 'Veridi - Tienda de ropa'; ?></title>
     <?php $cssVersion = @filemtime(__DIR__ . '/../css/styles.css') ?: time(); ?>
     <link rel="stylesheet" href="css/styles.css?v=<?php echo $cssVersion; ?>">
-    <link rel="icon" href="img/logoVeridi.png?v=<?php echo $cssVersion; ?>">
+    <link rel="icon" href="imgnuevas/LogoVeridi.png?v=<?php echo $cssVersion; ?>">
     
     <!-- Script para cargar tema guardado inmediatamente -->
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('veridi-theme') || 'dark';
+            const savedTheme = localStorage.getItem('veridi-theme') || 'light';
             document.documentElement.setAttribute('data-theme', savedTheme);
         })();
     </script>
@@ -159,7 +159,7 @@ $cantidadDeseos = count($_SESSION['deseos']);
         <div class="header-left">
             <div class="logo">
                 <a href="index.php" title="Volver a inicio">
-                    <img src="img/Logo.png" alt="Veridi Logo" class="logo-img">
+                    <img src="imgnuevas/LogoVeridi.png" alt="Veridi Logo" class="logo-img">
                 </a>
             </div>
         </div>
