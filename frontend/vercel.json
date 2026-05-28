@@ -1,0 +1,20 @@
+{
+  "rewrites": [
+    {
+      "source": "/php/(.*)",
+      "destination": "https://davidvaldes.masterendaw.es/php/$1"
+    },
+    {
+      "source": "/img/(.*)",
+      "destination": "https://davidvaldes.masterendaw.es/img/$1"
+    },
+    {
+      "source": "/imgnuevas/(.*)",
+      "destination": "https://davidvaldes.masterendaw.es/imgnuevas/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import axios from 'axios';
 // Allow an explicit empty string in VITE_BACKEND_BASE_URL to use relative paths
 const rawEnvBackend = import.meta.env.VITE_BACKEND_BASE_URL;
 const BACKEND_BASE_URL = (rawEnvBackend === undefined
-  ? 'http://localhost/veridi_tienda_web'
+  ? (import.meta.env.DEV ? 'http://localhost/veridi_tienda_web' : '')
   : String(rawEnvBackend)
 ).replace(/\/$/, '');
 
