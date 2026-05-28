@@ -1,0 +1,4 @@
+RewriteEngine On
+
+# Keep a root entry point without requiring index.php
+RewriteRule ^$ frontend/dist/ [R=302,L]

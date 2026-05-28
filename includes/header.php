@@ -39,9 +39,9 @@ if ($authSuccess !== '') {
     }
 }
 
-$currentPage = basename(parse_url($_SERVER['REQUEST_URI'] ?? 'index.php', PHP_URL_PATH));
+$currentPage = basename(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH));
 if ($currentPage === '') {
-    $currentPage = 'index.php';
+    $currentPage = '/';
 }
 
 $profileMessageText = '';
@@ -158,7 +158,7 @@ $cantidadDeseos = count($_SESSION['deseos']);
         <!-- IZQUIERDA: LOGO -->
         <div class="header-left">
             <div class="logo">
-                <a href="index.php" title="Volver a inicio">
+                <a href="frontend/dist/#/" title="Volver a inicio">
                     <img src="imgnuevas/LogoVeridi.png" alt="Veridi Logo" class="logo-img">
                 </a>
             </div>
@@ -167,13 +167,13 @@ $cantidadDeseos = count($_SESSION['deseos']);
         <!-- CENTRO: NAVEGACIÓN -->
         <div class="header-center">
             <nav class="nav-principal">
-                <a href="index.php" class="nav-link nav-main">Inicio</a>
-                <a href="tienda.php" class="nav-link nav-main">Catálogo</a>
-                <a href="contacto.php" class="nav-link nav-main">Contacto</a>
-                <a href="sobre-nosotros.php" class="nav-link nav-main">Sobre nosotros</a>
-                <a href="valoraciones.php" class="nav-link nav-main">Valoraciones</a>
+                <a href="frontend/dist/#/inicio" class="nav-link nav-main">Inicio</a>
+                <a href="frontend/dist/#/tienda" class="nav-link nav-main">Catálogo</a>
+                <a href="frontend/dist/#/contacto" class="nav-link nav-main">Contacto</a>
+                <a href="frontend/dist/#/sobre-nosotros" class="nav-link nav-main">Sobre nosotros</a>
+                <a href="frontend/dist/#/valoraciones" class="nav-link nav-main">Valoraciones</a>
                 <?php if (isset($_SESSION['usuario_rol']) && $_SESSION['usuario_rol'] === 'admin'): ?>
-                    <a href="panel-admin.php" class="nav-link nav-main">PANEL DE ADMINISTRADOR</a>
+                    <a href="frontend/dist/#/admin" class="nav-link nav-main">PANEL DE ADMINISTRADOR</a>
                 <?php endif; ?>
             </nav>
         </div>
@@ -188,21 +188,21 @@ $cantidadDeseos = count($_SESSION['deseos']);
                         <span class="icon">👤</span>
                     </button>
 
-                    <a href="carrito.php" class="cart-badge icon-only" title="Ver carrito" aria-label="Ir al carrito">
+                    <a href="frontend/dist/#/carrito" class="cart-badge icon-only" title="Ver carrito" aria-label="Ir al carrito">
                         <span aria-hidden="true">🛒</span>
                         <?php if ((int)($cantidadCarrito ?? 0) > 0): ?>
                             <span class="badge"><?php echo (int)$cantidadCarrito; ?></span>
                         <?php endif; ?>
                     </a>
 
-                    <a href="lista-deseos.php" class="wishlist-badge icon-only" title="Ver favoritos" aria-label="Ir a favoritos">
+                    <a href="frontend/dist/#/lista-deseos" class="wishlist-badge icon-only" title="Ver favoritos" aria-label="Ir a favoritos">
                         <span aria-hidden="true">❤️</span>
                         <?php if ((int)($cantidadDeseos ?? 0) > 0): ?>
                             <span class="badge"><?php echo (int)$cantidadDeseos; ?></span>
                         <?php endif; ?>
                     </a>
 
-                    <a href="logout.php" class="nav-link logout-btn" title="Cerrar sesión">Cerrar sesión</a>
+                    <a href="#" class="nav-link logout-btn" id="legacy-logout-link" title="Cerrar sesión">Cerrar sesión</a>
                 <?php else: ?>
                     <div class="auth-inline-wrapper" data-auth-default-tab="<?php echo htmlspecialchars($authTab); ?>" data-auth-auto-open="<?php echo $authOpen ? '1' : '0'; ?>">
                         <div class="auth-actions">
@@ -350,7 +350,7 @@ $cantidadDeseos = count($_SESSION['deseos']);
                             </div>
                             <div class="profile-card-right">
                                 <strong>€<?php echo number_format((float)$pedido['total'], 2, ',', '.'); ?></strong>
-                                <a href="confirmacion_pedido.php?id=<?php echo (int)$pedido['id_pedido']; ?>">Ver</a>
+                                <a href="frontend/dist/#/confirmacion/<?php echo (int)$pedido['id_pedido']; ?>">Ver</a>
                             </div>
                         </article>
                     <?php endforeach; ?>
@@ -389,6 +389,23 @@ $cantidadDeseos = count($_SESSION['deseos']);
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const legacyLogoutLink = document.getElementById('legacy-logout-link');
+    if (legacyLogoutLink) {
+        legacyLogoutLink.addEventListener('click', async function(event) {
+            event.preventDefault();
+            try {
+                await fetch('php/api_auth_react.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ action: 'logout' })
+                });
+            } catch (e) {
+            }
+            window.location.href = 'frontend/dist/#/';
+        });
+    }
+
     const wrapper = document.querySelector('.auth-inline-wrapper');
     if (wrapper) {
         const openButtons = wrapper.querySelectorAll('.auth-open-btn');

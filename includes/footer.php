@@ -19,9 +19,9 @@
                 <div class="col-divider"></div>
             </div>
             <ul class="info-links">
-                <li><a href="contacto.php" class="footer-link">📞 Contacto</a></li>
-                <li><a href="sobre-nosotros.php" class="footer-link">ℹ️ Sobre Nosotros</a></li>
-                <li><a href="politica.php" class="footer-link">🔒 Política de Privacidad</a></li>
+                <li><a href="frontend/dist/#/contacto" class="footer-link">📞 Contacto</a></li>
+                <li><a href="frontend/dist/#/sobre-nosotros" class="footer-link">ℹ️ Sobre Nosotros</a></li>
+                <li><a href="frontend/dist/#/politica" class="footer-link">🔒 Política de Privacidad</a></li>
             </ul>
         </div>
 

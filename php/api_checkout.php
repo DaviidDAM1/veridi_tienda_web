@@ -173,10 +173,12 @@ try {
     $conexion->commit();
     unset($_SESSION['carrito']);
 
+    $reactBase = rtrim((string)(getenv('REACT_APP_URL') ?: 'http://localhost/veridi_tienda_web/frontend/dist'), '/');
+
     echo json_encode([
         'ok' => true,
         'id_pedido' => $idPedido,
-        'redirect' => 'http://localhost/veridi_tienda_web/confirmacion_pedido.php?id=' . $idPedido
+        'redirect' => $reactBase . '/#/confirmacion/' . $idPedido
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
     if ($conexion->inTransaction()) {

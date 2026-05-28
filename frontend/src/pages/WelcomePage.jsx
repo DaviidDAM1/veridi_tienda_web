@@ -29,7 +29,7 @@ function WelcomePage() {
           className="welcome-splash-logo"
         />
 
-        <div className="welcome-splash-badge">Colección 2025</div>
+        <div className="welcome-splash-badge">Colección 2026</div>
 
         <h1 className="welcome-splash-title">
           Bienvenido a<br />

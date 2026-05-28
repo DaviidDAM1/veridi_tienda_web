@@ -10,7 +10,7 @@ Arquitectura principal:
 - Sesion PHP: autenticacion, carrito y favoritos en tiempo de ejecucion
 
 Entrada de la app:
-- `index.php` redirige al build React con hash route.
+- La raiz del proyecto usa `.htaccess` para redirigir a `frontend/dist/`.
 - Ruta inicial actual: `/#/` -> pantalla de bienvenida.
 - Inicio real de tienda: `/#/inicio`.
 
@@ -836,3 +836,13 @@ Frontend muestra el mensaje y tarjetas de producto clicables
 
 - **OpenAI API** — Documentacion de la API de modelos de lenguaje (referencia para la mejora futura del agente IA).
   https://platform.openai.com/docs
+
+---
+
+## 14. Conclusion
+
+Veridi es un proyecto de tienda online completo que cubre todo el ciclo de una aplicacion web moderna: desde la autenticacion y el catalogo hasta el checkout, las valoraciones y el panel de administracion. Ha sido desarrollado con una arquitectura clara — SPA React en el frontend, PHP con endpoints JSON en el backend y MySQL como base de datos — que separa responsabilidades y facilita el mantenimiento.
+
+A lo largo del proyecto se han aplicado buenas practicas de seguridad, un diseno responsive funcional en movil y escritorio, y efectos visuales avanzados que dan a la tienda una identidad propia. La documentacion generada refleja el trabajo realizado y sirve como referencia tanto para el mantenimiento actual como para cualquier mejora futura.
+
+Las proximas etapas naturales del proyecto son el despliegue en un servidor real accesible publicamente y la incorporacion de un agente de IA que enriquezca la experiencia de compra, convirtiendo Veridi en una plataforma mas inteligente y competitiva.

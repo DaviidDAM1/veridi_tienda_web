@@ -19,6 +19,12 @@ export default defineConfig(({ command }) => ({
         target: 'http://localhost',
         changeOrigin: true,
         rewrite: (path) => `/veridi_tienda_web${path}`
+      },
+      // Proxy additional image folder used by the welcome logo
+      '/imgnuevas': {
+        target: 'http://localhost',
+        changeOrigin: true,
+        rewrite: (path) => `/veridi_tienda_web${path}`
       }
     }
   }

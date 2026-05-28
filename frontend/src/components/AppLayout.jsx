@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import api, { buildBackendAssetUrl, BACKEND_BASE_URL } from '../services/api';
+import api, { buildBackendAssetUrl } from '../services/api';
 // ThemeToggle component kept in repo but not used; force light theme instead
 import ToastProvider from './ui/ToastProvider';
 
@@ -242,10 +242,10 @@ function AppLayout({ children }) {
       setValoracionesUsuario([]);
       setContador({ carrito: 0, deseos: 0 });
       setProfileOpen(false);
-      // Redirect to the home page after logout. If BACKEND_BASE_URL is
-      // configured (production), go there; otherwise go to the SPA root '/'.
+      // Redirect to the welcome route within the current SPA base URL.
       try {
-        const target = (typeof BACKEND_BASE_URL === 'string' && BACKEND_BASE_URL.length) ? BACKEND_BASE_URL : '/';
+        const baseWithoutHash = window.location.href.split('#')[0].replace(/\/?$/, '/');
+        const target = `${baseWithoutHash}#/`;
         window.location.href = target;
       } catch (e) {
         // ignore redirect errors
