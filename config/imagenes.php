@@ -56,6 +56,15 @@ $imagenesProducto = [
 
     46 => 'imgnuevas/calzoncillosVeridi.png',
 
+    // Calzado (nuevos productos)
+    51 => 'imgnuevas/zapatillasNegras.png',
+    52 => 'imgnuevas/zapatillasRunningAzules.png',
+    53 => 'imgnuevas/zapatillasRunningBlancas.png',
+    54 => 'imgnuevas/zapatillasRunningNegras.png',
+    55 => 'imgnuevas/zapatillasTNblancas.png',
+    56 => 'imgnuevas/zapatillasTNnegras.png',
+    57 => 'imgnuevas/zapatillasBlancas.png',
+
     // Compatibilidad con base antigua de 50 productos
     47 => 'imgnuevas/calzoncillosVeridi.png',
     48 => 'imgnuevas/gorraNegra.png',
@@ -63,11 +72,42 @@ $imagenesProducto = [
     50 => 'imgnuevas/gorraAzul.png',
 ];
 
-function obtenerImagenProducto($idProducto) {
+function normalizarNombreImagen($texto)
+{
+    $texto = mb_strtolower(trim((string)$texto), 'UTF-8');
+    $texto = strtr($texto, [
+        'á' => 'a',
+        'é' => 'e',
+        'í' => 'i',
+        'ó' => 'o',
+        'ú' => 'u',
+        'ü' => 'u',
+        'ñ' => 'n'
+    ]);
+    $texto = preg_replace('/\s+/', ' ', $texto);
+    return $texto;
+}
+
+function obtenerImagenProducto($idProducto, $nombreProducto = '') {
     global $imagenesProducto;
 
     if (isset($imagenesProducto[$idProducto])) {
         return $imagenesProducto[$idProducto];
+    }
+
+    $mapaPorNombre = [
+        'zapatillas urban negras' => 'imgnuevas/zapatillasNegras.png',
+        'zapatillas running azul' => 'imgnuevas/zapatillasRunningAzules.png',
+        'zapatillas running blancas' => 'imgnuevas/zapatillasRunningBlancas.png',
+        'zapatillas running negras' => 'imgnuevas/zapatillasRunningNegras.png',
+        'zapatillas tn blancas' => 'imgnuevas/zapatillasTNblancas.png',
+        'zapatillas tn negras' => 'imgnuevas/zapatillasTNnegras.png',
+        'zapatillas urban blancas' => 'imgnuevas/zapatillasBlancas.png'
+    ];
+
+    $claveNombre = normalizarNombreImagen($nombreProducto);
+    if ($claveNombre !== '' && isset($mapaPorNombre[$claveNombre])) {
+        return $mapaPorNombre[$claveNombre];
     }
 
     return 'imgnuevas/LogoVeridi.png';

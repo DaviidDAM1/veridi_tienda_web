@@ -118,7 +118,35 @@ function CartPage() {
                       />
                     )}
                     <p>{Number(item.precio).toFixed(2)} € unidad</p>
-                    {item.talla_nombre && <p><strong>Talla:</strong> {item.talla_nombre}</p>}
+                    {item.talla_nombre && <p><strong>Talla actual:</strong> {item.talla_nombre}</p>}
+                    {Array.isArray(item.available_tallas) && item.available_tallas.length > 0 && (
+                      <div className="carrito-talla-selector">
+                        <label htmlFor={`talla-${item.item_key}`}>Talla</label>
+                        <select
+                          id={`talla-${item.item_key}`}
+                          value={Number(item.id_talla || 0)}
+                          disabled={working}
+                          onChange={(event) => {
+                            const newSizeId = Number(event.target.value || 0);
+                            if (!newSizeId || newSizeId === Number(item.id_talla || 0)) {
+                              return;
+                            }
+                            doCartAction({
+                              action: 'update_size',
+                              id_producto: item.id_producto,
+                              id_talla: item.id_talla,
+                              new_id_talla: newSizeId
+                            });
+                          }}
+                        >
+                          {item.available_tallas.map((talla) => (
+                            <option key={`${item.item_key}-${talla.id_talla}`} value={talla.id_talla}>
+                              {talla.nombre} (stock {talla.stock})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <p><strong>Subtotal:</strong> {Number(item.subtotal).toFixed(2)} €</p>
                   </div>
 

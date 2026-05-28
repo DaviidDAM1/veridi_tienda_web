@@ -89,7 +89,7 @@ $productoOut = [
     'color' => $producto['color'] ?? '',
     'material' => $producto['material'] ?? '',
     'estilo' => $producto['estilo'] ?? '',
-    'imagen' => obtenerImagenProducto($idProducto)
+    'imagen' => obtenerImagenProducto($idProducto, (string)($producto['nombre'] ?? ''))
 ];
 
 $relacionadosOut = array_map(static function ($prod) {
@@ -99,7 +99,7 @@ $relacionadosOut = array_map(static function ($prod) {
         'nombre' => $prod['nombre'],
         'precio' => (float)$prod['precio'],
         'descripcion' => $prod['descripcion'] ?? '',
-        'imagen' => obtenerImagenProducto($idRel)
+        'imagen' => obtenerImagenProducto($idRel, (string)($prod['nombre'] ?? ''))
     ];
 }, $relacionados);
 

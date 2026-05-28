@@ -1,5 +1,6 @@
 <?php
 require_once "../config/conexion.php";
+require_once "../config/imagenes.php";
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -36,6 +37,7 @@ function outputCart(PDO $conexion): void
 {
     $carrito = $_SESSION['carrito'] ?? [];
     $tallasNombres = [];
+    $tallasPorProducto = [];
     $total = 0;
 
     $idsTallas = [];
@@ -55,6 +57,40 @@ function outputCart(PDO $conexion): void
         }
     }
 
+    $idsProductos = [];
+    foreach ($carrito as $item) {
+        $idProducto = (int)($item['id_producto'] ?? 0);
+        if ($idProducto > 0) {
+            $idsProductos[$idProducto] = true;
+        }
+    }
+
+    if (!empty($idsProductos)) {
+        $productoIds = array_keys($idsProductos);
+        $placeholdersProductos = implode(',', array_fill(0, count($productoIds), '?'));
+        $stmtSizes = $conexion->prepare(
+            "SELECT pt.id_producto, pt.id_talla, t.nombre, pt.stock
+             FROM producto_tallas pt
+             INNER JOIN tallas t ON t.id_talla = pt.id_talla
+             WHERE pt.id_producto IN ($placeholdersProductos)
+               AND pt.stock > 0
+             ORDER BY pt.id_producto ASC, pt.id_talla ASC"
+        );
+        $stmtSizes->execute($productoIds);
+
+        while ($row = $stmtSizes->fetch(PDO::FETCH_ASSOC)) {
+            $idProducto = (int)$row['id_producto'];
+            if (!isset($tallasPorProducto[$idProducto])) {
+                $tallasPorProducto[$idProducto] = [];
+            }
+            $tallasPorProducto[$idProducto][] = [
+                'id_talla' => (int)$row['id_talla'],
+                'nombre' => (string)$row['nombre'],
+                'stock' => (int)$row['stock']
+            ];
+        }
+    }
+
     $itemsOut = [];
     foreach ($carrito as $itemKey => $item) {
         $cantidad = (int)($item['cantidad'] ?? 0);
@@ -63,16 +99,18 @@ function outputCart(PDO $conexion): void
         $total += $subtotal;
 
         $idTalla = (int)($item['id_talla'] ?? 0);
+        $idProducto = (int)($item['id_producto'] ?? 0);
         $itemsOut[] = [
             'item_key' => $itemKey,
-            'id_producto' => (int)($item['id_producto'] ?? 0),
+            'id_producto' => $idProducto,
             'id_talla' => $idTalla,
             'nombre' => (string)($item['nombre'] ?? 'Producto'),
             'precio' => $precio,
             'cantidad' => $cantidad,
             'imagen' => (string)($item['imagen'] ?? ''),
             'subtotal' => $subtotal,
-            'talla_nombre' => $idTalla > 0 ? ($tallasNombres[$idTalla] ?? ('ID: ' . $idTalla)) : ''
+            'talla_nombre' => $idTalla > 0 ? ($tallasNombres[$idTalla] ?? ('ID: ' . $idTalla)) : '',
+            'available_tallas' => $tallasPorProducto[$idProducto] ?? []
         ];
     }
 
@@ -182,6 +220,78 @@ switch ($action) {
         }
         break;
 
+    case 'update_size':
+        $newIdTalla = isset($payload['new_id_talla']) ? (int)$payload['new_id_talla'] : (isset($_POST['new_id_talla']) ? (int)$_POST['new_id_talla'] : 0);
+
+        if ($idProducto <= 0 || $idTalla <= 0 || $newIdTalla <= 0 || !isset($_SESSION['carrito'][$itemKey])) {
+            echo json_encode([
+                'ok' => false,
+                'message' => 'Datos de talla no validos.'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        if ($newIdTalla === $idTalla) {
+            outputCart($conexion);
+        }
+
+        $stmtStock = $conexion->prepare("SELECT stock FROM producto_tallas WHERE id_producto = :id_producto AND id_talla = :id_talla LIMIT 1");
+        $stmtStock->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+        $stmtStock->bindValue(':id_talla', $newIdTalla, PDO::PARAM_INT);
+        $stmtStock->execute();
+        $stockRow = $stmtStock->fetch(PDO::FETCH_ASSOC);
+
+        if (!$stockRow || (int)$stockRow['stock'] <= 0) {
+            echo json_encode([
+                'ok' => false,
+                'message' => 'La talla seleccionada no tiene stock disponible.'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $stockDestino = (int)$stockRow['stock'];
+        $oldQty = (int)($_SESSION['carrito'][$itemKey]['cantidad'] ?? 0);
+        if ($oldQty <= 0) {
+            unset($_SESSION['carrito'][$itemKey]);
+            outputCart($conexion);
+        }
+
+        $newItemKey = $idProducto . '_' . $newIdTalla;
+        $destQty = isset($_SESSION['carrito'][$newItemKey])
+            ? (int)($_SESSION['carrito'][$newItemKey]['cantidad'] ?? 0)
+            : 0;
+
+        $capacity = max(0, $stockDestino - $destQty);
+        if ($capacity <= 0) {
+            echo json_encode([
+                'ok' => false,
+                'message' => 'No puedes mover mas unidades a esa talla porque alcanzaste su stock.'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $moveQty = min($oldQty, $capacity);
+
+        $sourceItem = $_SESSION['carrito'][$itemKey];
+        if (!isset($_SESSION['carrito'][$newItemKey])) {
+            $_SESSION['carrito'][$newItemKey] = [
+                'id_producto' => $idProducto,
+                'id_talla' => $newIdTalla,
+                'nombre' => (string)($sourceItem['nombre'] ?? 'Producto'),
+                'precio' => (float)($sourceItem['precio'] ?? 0),
+                'imagen' => (string)($sourceItem['imagen'] ?? ''),
+                'cantidad' => $moveQty
+            ];
+        } else {
+            $_SESSION['carrito'][$newItemKey]['cantidad'] = $destQty + $moveQty;
+        }
+
+        $_SESSION['carrito'][$itemKey]['cantidad'] = $oldQty - $moveQty;
+        if ((int)$_SESSION['carrito'][$itemKey]['cantidad'] <= 0) {
+            unset($_SESSION['carrito'][$itemKey]);
+        }
+        break;
+
     case 'remove_item':
         if ($idProducto > 0 && $idTalla > 0 && isset($_SESSION['carrito'][$itemKey])) {
             unset($_SESSION['carrito'][$itemKey]);
@@ -190,6 +300,89 @@ switch ($action) {
 
     case 'clear_cart':
         $_SESSION['carrito'] = [];
+        break;
+
+    case 'add_outfit':
+        $productIdsRaw = $payload['product_ids'] ?? [];
+        if (!is_array($productIdsRaw) || empty($productIdsRaw)) {
+            echo json_encode([
+                'ok' => false,
+                'message' => 'No hay productos para agregar al carrito.'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $productIds = [];
+        foreach ($productIdsRaw as $rawId) {
+            $id = (int)$rawId;
+            if ($id > 0) {
+                $productIds[$id] = true;
+            }
+        }
+
+        if (empty($productIds)) {
+            echo json_encode([
+                'ok' => false,
+                'message' => 'Los productos del outfit no son validos.'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $stmtProduct = $conexion->prepare(
+            "SELECT id_producto, nombre, precio FROM productos
+             WHERE id_producto = :id_producto AND (oculto = 0 OR oculto IS NULL)
+             LIMIT 1"
+        );
+        $stmtSize = $conexion->prepare(
+            "SELECT id_talla, stock FROM producto_tallas
+             WHERE id_producto = :id_producto AND stock > 0
+             ORDER BY id_talla ASC
+             LIMIT 1"
+        );
+
+        foreach (array_keys($productIds) as $idProductoOutfit) {
+            $stmtProduct->bindValue(':id_producto', $idProductoOutfit, PDO::PARAM_INT);
+            $stmtProduct->execute();
+            $producto = $stmtProduct->fetch(PDO::FETCH_ASSOC);
+            if (!$producto) {
+                continue;
+            }
+
+            $stmtSize->bindValue(':id_producto', $idProductoOutfit, PDO::PARAM_INT);
+            $stmtSize->execute();
+            $sizeRow = $stmtSize->fetch(PDO::FETCH_ASSOC);
+            if (!$sizeRow) {
+                continue;
+            }
+
+            $idTallaOutfit = (int)$sizeRow['id_talla'];
+            $stockDisponible = max(0, (int)$sizeRow['stock']);
+            if ($idTallaOutfit <= 0 || $stockDisponible <= 0) {
+                continue;
+            }
+
+            $itemKeyOutfit = $idProductoOutfit . '_' . $idTallaOutfit;
+
+            if (!isset($_SESSION['carrito'][$itemKeyOutfit])) {
+                $_SESSION['carrito'][$itemKeyOutfit] = [
+                    'id_producto' => (int)$producto['id_producto'],
+                    'id_talla' => $idTallaOutfit,
+                    'nombre' => (string)$producto['nombre'],
+                    'precio' => (float)$producto['precio'],
+                    'imagen' => obtenerImagenProducto((int)$producto['id_producto'], (string)$producto['nombre']),
+                    'cantidad' => 1
+                ];
+            } else {
+                $cantidadActual = (int)($_SESSION['carrito'][$itemKeyOutfit]['cantidad'] ?? 0);
+                if ($cantidadActual < $stockDisponible) {
+                    $_SESSION['carrito'][$itemKeyOutfit]['cantidad'] = $cantidadActual + 1;
+                }
+            }
+
+            if ((int)$_SESSION['carrito'][$itemKeyOutfit]['cantidad'] > $stockDisponible) {
+                $_SESSION['carrito'][$itemKeyOutfit]['cantidad'] = $stockDisponible;
+            }
+        }
         break;
 
     default:

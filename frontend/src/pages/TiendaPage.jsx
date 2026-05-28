@@ -4,6 +4,7 @@ import api from '../services/api';
 import { buildBackendAssetUrl } from '../services/api';
 import { useToast } from '../components/ui/ToastProvider';
 import { openAuthPanel } from '../utils/auth';
+import AiStylistChat from '../components/AiStylistChat';
 
 const PRODUCTOS_POR_PAGINA = 16;
 
@@ -451,6 +452,8 @@ function TiendaPage() {
           </>
         )}
       </div>
+
+      <AiStylistChat />
 
       <main className="catalog-main">
         {loading && <p>Cargando productos...</p>}

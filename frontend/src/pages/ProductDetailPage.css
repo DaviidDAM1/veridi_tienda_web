@@ -228,6 +228,26 @@
   background: rgba(244,63,94,0.08);
 }
 .btn-favorito.es-favorito:hover { background: rgba(244,63,94,0.14); }
+
+.btn-outfit-ai {
+  width: 100%;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  border: 1px solid rgba(14, 165, 164, 0.42);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(14,165,164,0.12), rgba(37,99,235,0.1));
+  color: #0f3f3f;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.btn-outfit-ai:hover {
+  transform: translateY(-2px);
+  border-color: rgba(14, 165, 164, 0.62);
+  box-shadow: 0 10px 26px rgba(14, 165, 164, 0.2);
+}
+
 .btn-volver {
   display: inline-flex;
   align-items: center;

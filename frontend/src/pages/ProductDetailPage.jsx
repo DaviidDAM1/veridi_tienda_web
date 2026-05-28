@@ -215,6 +215,13 @@ function ProductDetailPage() {
             <button type="button" className={`btn-favorito ${usuario.esFavorito ? 'es-favorito' : ''}`} onClick={handleToggleFavorito} disabled={favLoading}>
               {usuario.logueado ? (usuario.esFavorito ? '❤️ Eliminar de favoritos' : '🤍 Añadir a favoritos') : '🔒 Inicia sesión para añadir a favoritos'}
             </button>
+            <button
+              type="button"
+              className="btn-outfit-ai"
+              onClick={() => navigate(`/tienda?ai=open&base_product_id=${Number(producto.id_producto)}&message=${encodeURIComponent('Quiero un outfit con esta prenda')}`)}
+            >
+              ✨ Crear outfit con esta prenda
+            </button>
           </div>
 
           {cartMessage && <div className={cartMessage.includes('✓') ? 'success-message' : 'error-message'} style={{ marginTop: 12 }}>{cartMessage}</div>}

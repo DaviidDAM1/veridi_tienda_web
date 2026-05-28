@@ -275,7 +275,15 @@ INSERT INTO productos (nombre, descripcion, precio, color, estilo, material, id_
 ('Calcetines Blancos Veridi', 'Calcetines blancos comodos para uso diario.', 9.90, 'Blanco', 'deportivo', 'Algodon', 9),
 ('Calcetines Negros Veridi', 'Calcetines negros resistentes.', 9.90, 'Negro', 'deportivo', 'Algodon', 9),
 
-('Boxer Veridi', 'Prenda interior comoda de ajuste elastico.', 12.90, 'Negro', 'casual', 'Algodon elastico', 10);
+('Boxer Veridi', 'Prenda interior comoda de ajuste elastico.', 12.90, 'Negro', 'casual', 'Algodon elastico', 10),
+
+('Zapatillas Urban Negras', 'Sneaker urbana negra de perfil bajo para looks casuales.', 90.00, 'Negro', 'casual', 'Cuero sintetico', 7),
+('Zapatillas Running Azul', 'Zapatilla running azul con amortiguacion ligera y gran transpiracion.', 64.90, 'Azul', 'deportivo', 'Malla tecnica', 7),
+('Zapatillas Running Blancas', 'Zapatilla running blanca, comoda para entrenamiento diario.', 64.90, 'Blanco', 'deportivo', 'Malla tecnica', 7),
+('Zapatillas Running Negras', 'Zapatilla running negra con suela de alta respuesta.', 64.90, 'Negro', 'deportivo', 'Malla tecnica', 7),
+('Zapatillas TN Blancas', 'Sneaker blanca de estilo urbano con camara visible.', 100.00, 'Blanco', 'casual', 'Textil y sintetico', 7),
+('Zapatillas TN Negras', 'Sneaker negra de estilo urbano con camara visible.', 100.00, 'Negro', 'casual', 'Textil y sintetico', 7),
+('Zapatillas Urban Blancas', 'Sneaker urbana blanca de perfil bajo para combinaciones limpias.', 90.00, 'Blanco', 'casual', 'Cuero sintetico', 7);
 
 
 INSERT INTO producto_tallas (id_producto, id_talla, stock)

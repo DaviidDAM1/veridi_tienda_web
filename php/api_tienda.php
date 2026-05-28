@@ -180,7 +180,7 @@ $productosOut = array_map(static function ($producto) use ($deseosIds) {
         'descripcion' => $producto['descripcion'],
         'precio' => (float)$producto['precio'],
         'categoria' => $producto['categoria'],
-        'imagen' => obtenerImagenProducto($idProducto),
+        'imagen' => obtenerImagenProducto($idProducto, (string)($producto['nombre'] ?? '')),
         'es_favorito' => isset($deseosIds[$idProducto])
     ];
 }, $productos);

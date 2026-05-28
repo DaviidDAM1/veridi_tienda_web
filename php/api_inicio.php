@@ -48,7 +48,7 @@ $normalizar = static function (array $producto): array {
         'nombre' => (string)$producto['nombre'],
         'descripcion' => (string)($producto['descripcion'] ?? ''),
         'precio' => (float)$producto['precio'],
-        'imagen' => obtenerImagenProducto($id)
+        'imagen' => obtenerImagenProducto($id, (string)($producto['nombre'] ?? ''))
     ];
 };
 
