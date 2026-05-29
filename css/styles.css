@@ -754,6 +754,7 @@ header {
     border: 1px solid var(--v-border);
     border-radius: var(--radius-lg);
     padding: 18px;
+    box-sizing: border-box;
     box-shadow: var(--shadow-md), var(--shadow-glow);
     display: none;
     z-index: 1400;
@@ -2370,9 +2371,27 @@ input::placeholder, textarea::placeholder { color: rgba(107,127,168,0.55); }
     }
     .header-right { flex: 1 1 100%; }
     .user-section { flex-wrap: wrap; gap: 10px; justify-content: center; }
-    .auth-inline-wrapper { width: 100%; max-width: 340px; }
+    .auth-inline-wrapper {
+        width: 100%;
+        max-width: 340px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
     .auth-actions { width: 100%; justify-content: center; flex-wrap: wrap; }
-    .auth-panel { right: 50%; transform: translateX(50%); }
+    .auth-panel {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        width: min(360px, calc(100vw - 24px));
+    }
+    .auth-tabs { flex-wrap: wrap; }
+    .auth-tab-btn { min-height: 42px; }
+    .auth-inline-form input,
+    .auth-inline-form button {
+        min-height: 44px;
+    }
     .user-greeting { font-size: 12px; padding: 6px 10px; flex: 0 1 100%; }
     .icon-button { width: 44px; height: 44px; font-size: 16px; }
     .profile-modal { width: calc(100vw - 22px); max-height: calc(100vh - 22px); padding: 16px; }
