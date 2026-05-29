@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api, { buildBackendAssetUrl } from '../services/api';
 // ThemeToggle component kept in repo but not used; force light theme instead
 import ToastProvider from './ui/ToastProvider';
@@ -22,6 +22,7 @@ function formatStars(count) {
 
 function AppLayout({ children }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const isWelcomePage = location.pathname === '/' || location.pathname === '/bienvenida';
   const authWrapperRef = useRef(null);
 
@@ -177,6 +178,33 @@ function AppLayout({ children }) {
       window.removeEventListener('veridi:open-auth', handleOpenAuthRequest);
     };
   }, [isWelcomePage, currentUser]);
+
+  useEffect(() => {
+    const handleOpenAiOutfit = (event) => {
+      const detail = event?.detail || {};
+      const baseProductId = Number(detail.baseProductId || 0);
+      if (!baseProductId) {
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.set('ai', 'open');
+      params.set('base_product_id', String(baseProductId));
+
+      const messageText = String(detail.message || '').trim() || 'Quiero un outfit con esta prenda.';
+      params.set('message', messageText);
+
+      const budgetText = String(detail.presupuesto || '').trim();
+      if (budgetText) {
+        params.set('presupuesto', budgetText);
+      }
+
+      navigate(`/tienda?${params.toString()}`);
+    };
+
+    window.addEventListener('veridi:open-ai-outfit', handleOpenAiOutfit);
+    return () => window.removeEventListener('veridi:open-ai-outfit', handleOpenAiOutfit);
+  }, [navigate]);
 
   const handleRegister = async (event) => {
     event.preventDefault();

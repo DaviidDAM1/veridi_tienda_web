@@ -148,6 +148,15 @@ function ProductDetailPage() {
     }
   };
 
+  const handleCreateOutfit = () => {
+    const payload = {
+      baseProductId: Number(producto.id_producto),
+      message: 'Quiero un outfit con esta prenda.'
+    };
+
+    window.dispatchEvent(new CustomEvent('veridi:open-ai-outfit', { detail: payload }));
+  };
+
   return (
     <main className="producto-detalle-container">
       <div className="breadcrumb">
@@ -220,7 +229,7 @@ function ProductDetailPage() {
             <button
               type="button"
               className="btn-outfit-ai"
-              onClick={() => navigate(`/tienda?ai=open&base_product_id=${Number(producto.id_producto)}&message=${encodeURIComponent('Quiero un outfit con esta prenda')}`)}
+              onClick={handleCreateOutfit}
             >
               ✨ Crear outfit con esta prenda
             </button>

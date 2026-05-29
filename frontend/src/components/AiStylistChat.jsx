@@ -162,6 +162,36 @@ function AiStylistChat() {
   }, []);
 
   useEffect(() => {
+    const handleOpenFromProduct = (event) => {
+      const detail = event?.detail || {};
+      const baseProductId = Number(detail.baseProductId || 0);
+      const messageText = String(detail.message || '').trim();
+      const budgetText = String(detail.presupuesto || '').trim();
+
+      setOpen(true);
+
+      if (budgetText) {
+        setPresupuesto(budgetText);
+      }
+
+      const finalMessage = messageText || (baseProductId > 0 ? 'Quiero un outfit con esta prenda.' : '');
+      if (finalMessage) {
+        setMessage(finalMessage);
+      }
+
+      if (baseProductId > 0 || finalMessage) {
+        submitPrompt(finalMessage, {
+          baseProductId,
+          budgetOverride: budgetText
+        });
+      }
+    };
+
+    window.addEventListener('veridi:open-ai-outfit', handleOpenFromProduct);
+    return () => window.removeEventListener('veridi:open-ai-outfit', handleOpenFromProduct);
+  }, []);
+
+  useEffect(() => {
     const search = String(location.search || '');
     if (!search || handledSearchRef.current === search) {
       return;
