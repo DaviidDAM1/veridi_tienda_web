@@ -56,20 +56,14 @@ $imagenesProducto = [
 
     46 => 'imgnuevas/calzoncillosVeridi.png',
 
-    // Calzado (nuevos productos)
-    51 => 'imgnuevas/zapatillasNegras.png',
-    52 => 'imgnuevas/zapatillasRunningAzules.png',
-    53 => 'imgnuevas/zapatillasRunningBlancas.png',
-    54 => 'imgnuevas/zapatillasRunningNegras.png',
-    55 => 'imgnuevas/zapatillasTNblancas.png',
-    56 => 'imgnuevas/zapatillasTNnegras.png',
-    57 => 'imgnuevas/zapatillasBlancas.png',
-
-    // Compatibilidad con base antigua de 50 productos
-    47 => 'imgnuevas/calzoncillosVeridi.png',
-    48 => 'imgnuevas/gorraNegra.png',
-    49 => 'imgnuevas/gorraBlanca.png',
-    50 => 'imgnuevas/gorraAzul.png',
+    // Calzado
+    47 => 'imgnuevas/zapatillasNegras.png',
+    48 => 'imgnuevas/zapatillasRunningAzules.png',
+    49 => 'imgnuevas/zapatillasRunningBlancas.png',
+    50 => 'imgnuevas/zapatillasRunningNegras.png',
+    51 => 'imgnuevas/zapatillasTNblancas.png',
+    52 => 'imgnuevas/zapatillasTNnegras.png',
+    53 => 'imgnuevas/zapatillasBlancas.png',
 ];
 
 function normalizarNombreImagen($texto)
