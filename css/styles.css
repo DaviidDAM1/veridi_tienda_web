@@ -1756,6 +1756,48 @@ header {
     margin: 0;
     letter-spacing: 0.04em;
 }
+.paginacion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 40px 0 16px;
+}
+
+.paginacion button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    height: 42px;
+    padding: 0 14px;
+    border: 1.5px solid var(--v-border);
+    border-radius: 10px;
+    background: var(--v-surface-2);
+    color: var(--v-text);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.paginacion button:hover:not(:disabled):not(.active) {
+    background: var(--v-accent-2);
+    border-color: var(--v-accent-2);
+    color: #fff;
+    box-shadow: 0 4px 14px var(--v-accent-glow);
+    transform: translateY(-1px);
+}
+
+.paginacion button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .paginacion button.active,
 .paginacion .active {
     background: var(--grad-accent);
@@ -1769,10 +1811,17 @@ header {
     padding: 0 8px;
     border: none;
     background: transparent;
+    color: var(--v-muted);
+    font-size: 16px;
+    line-height: 42px;
+    box-shadow: none;
 }
 
 .paginacion-nav {
     min-width: 108px;
+    gap: 6px;
+    font-size: 13px;
+    letter-spacing: 0.01em;
 }
 
 /* ==========================================
@@ -2350,8 +2399,9 @@ input::placeholder, textarea::placeholder { color: rgba(107,127,168,0.55); }
     .about-cta-actions { flex-direction: column; }
     .about-btn { width: 100%; }
     .barra-busqueda { padding: 14px; }
-    .paginacion button { min-width: 38px; height: 38px; padding: 0 12px; }
-    .paginacion-nav { min-width: 94px; }
+    .paginacion { gap: 6px; margin: 28px 0 12px; }
+    .paginacion button { min-width: 38px; height: 38px; padding: 0 10px; font-size: 13px; border-radius: 8px; }
+    .paginacion-nav { min-width: 88px; font-size: 12px; }
     .hero-section { padding: 56px 20px; min-height: 340px; }
     .hero-aurora { inset: -24%; }
     .hero-aurora-wave { width: 96%; left: 2%; }
