@@ -3,11 +3,13 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
 import { buildBackendAssetUrl } from '../services/api';
 import { openAuthPanel } from '../utils/auth';
+import { formatMobileTallaLabel, useIsMobile } from '../utils/responsive';
 import './ProductDetailPage.css';
 
 function ProductDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [cartMessage, setCartMessage] = useState('');
@@ -197,7 +199,7 @@ function ProductDetailPage() {
                         checked={Number(selectedTalla) === Number(talla.id_talla)}
                         onChange={() => setSelectedTalla(talla.id_talla)}
                       />
-                      <span className="talla-label">{talla.nombre}</span>
+                      <span className="talla-label">{formatMobileTallaLabel(talla.nombre, isMobile)}</span>
                     </label>
                   ))}
                 </div>

@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { buildBackendAssetUrl } from '../services/api';
 import { openAuthPanel } from '../utils/auth';
+import { formatMobileTallaLabel, useIsMobile } from '../utils/responsive';
 
 function CartPage() {
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [requiresLogin, setRequiresLogin] = useState(false);
@@ -141,7 +143,7 @@ function CartPage() {
                         >
                           {item.available_tallas.map((talla) => (
                             <option key={`${item.item_key}-${talla.id_talla}`} value={talla.id_talla}>
-                              {talla.nombre} (stock {talla.stock})
+                              {formatMobileTallaLabel(talla.nombre, isMobile)} (stock {talla.stock})
                             </option>
                           ))}
                         </select>

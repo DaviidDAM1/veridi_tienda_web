@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import api, { buildBackendAssetUrl } from '../services/api';
+import { useIsMobile } from '../utils/responsive';
 
 const QUICK_PROMPTS = [
   'Quiero un outfit casual para diario',
@@ -12,6 +13,7 @@ const QUICK_PROMPTS = [
 function AiStylistChat() {
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const handledSearchRef = useRef('');
 
   const [open, setOpen] = useState(false);
@@ -216,7 +218,7 @@ function AiStylistChat() {
         title={open ? 'Cerrar asistente IA' : 'Abrir asistente IA'}
       >
         <span className="ai-stylist-fab-icon" aria-hidden="true">◉</span>
-        <span className="ai-stylist-fab-text">IA</span>
+        <span className="ai-stylist-fab-text">{isMobile ? 'AI' : 'IA'}</span>
       </button>
 
       <section className={`ai-stylist-panel ${open ? 'open' : ''} ${maximized ? 'maximized' : ''}`}>
