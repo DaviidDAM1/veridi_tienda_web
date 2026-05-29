@@ -76,10 +76,14 @@ function AppLayout({ children }) {
         setEditName('');
       }
     } catch (error) {
-      setCurrentUser(null);
-      setHistorialPedidos([]);
-      setValoracionesUsuario([]);
-      setContador({ carrito: 0, deseos: 0 });
+      // Keep current auth state on transient network/server failures.
+      // If the session is truly closed, api_usuario will answer with logueado=false.
+      if (Number(error?.response?.status) === 401) {
+        setCurrentUser(null);
+        setHistorialPedidos([]);
+        setValoracionesUsuario([]);
+        setContador({ carrito: 0, deseos: 0 });
+      }
     } finally {
       setLoadingUser(false);
     }

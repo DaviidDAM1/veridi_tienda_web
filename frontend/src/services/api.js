@@ -19,10 +19,36 @@ export { BACKEND_BASE_URL };
 const api = axios.create({
   baseURL: BACKEND_BASE_URL,
   withCredentials: true,
-  timeout: 10000,
+  timeout: 20000,
   headers: {
     'X-Requested-With': 'XMLHttpRequest'
   }
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error?.config || {};
+    const method = String(config.method || '').toLowerCase();
+    const status = error?.response?.status;
+    const isTimeout = String(error?.code || '') === 'ECONNABORTED';
+    const isNetworkError = !error?.response;
+    const isRetryableStatus = Number(status) >= 500;
+    const shouldRetry = method === 'get' && (isTimeout || isNetworkError || isRetryableStatus);
+
+    if (!shouldRetry) {
+      return Promise.reject(error);
+    }
+
+    const retryCount = Number(config.__retryCount || 0);
+    if (retryCount >= 1) {
+      return Promise.reject(error);
+    }
+
+    config.__retryCount = retryCount + 1;
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    return api(config);
+  }
+);
 
 export default api;
