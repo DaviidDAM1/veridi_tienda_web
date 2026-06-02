@@ -2,15 +2,15 @@
   "rewrites": [
     {
       "source": "/php/(.*)",
-      "destination": "https://davidvaldes.masterendaw.es/php/$1"
+      "destination": "https://davidvaldes.masterendaw.es/veridi_tienda_web/php/$1"
     },
     {
       "source": "/img/(.*)",
-      "destination": "https://davidvaldes.masterendaw.es/img/$1"
+      "destination": "https://davidvaldes.masterendaw.es/veridi_tienda_web/img/$1"
     },
     {
       "source": "/imgnuevas/(.*)",
-      "destination": "https://davidvaldes.masterendaw.es/imgnuevas/$1"
+      "destination": "https://davidvaldes.masterendaw.es/veridi_tienda_web/imgnuevas/$1"
     },
     {
       "source": "/(.*)",
