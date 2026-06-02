@@ -10,6 +10,32 @@ const QUICK_PROMPTS = [
   'Quiero combinar colores neutros'
 ];
 
+const SLOT_ORDER = ['top_main', 'top_layer', 'bottom', 'shoes', 'extra'];
+const SLOT_LABELS = {
+  top_main: 'Camiseta',
+  top_layer: 'Capa superior (opcional)',
+  bottom: 'Pantalon',
+  shoes: 'Shoes',
+  extra: 'Gorra (opcional)'
+};
+
+function getOpenAiStatusText(meta) {
+  const status = String(meta?.openai_status || '');
+  if (meta?.llm_used) {
+    return { tone: 'ok', text: 'Recomendacion generada con OpenAI + validacion de catalogo.' };
+  }
+  if (status === 'openai_no_config') {
+    return { tone: 'warn', text: 'OpenAI no esta configurado. Se uso el motor local de recomendaciones.' };
+  }
+  if (status === 'openai_no_curl') {
+    return { tone: 'warn', text: 'No hay soporte cURL en PHP para OpenAI. Se uso el motor local de recomendaciones.' };
+  }
+  if (status === 'openai_fallback') {
+    return { tone: 'warn', text: 'OpenAI no respondio en este intento. Se aplico fallback local automaticamente.' };
+  }
+  return { tone: 'warn', text: 'Se uso el motor local de recomendaciones para esta respuesta.' };
+}
+
 function AiStylistChat() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -27,6 +53,7 @@ function AiStylistChat() {
   const [result, setResult] = useState(null);
 
   const hasResult = useMemo(() => Boolean(result?.ok), [result]);
+  const openAiStatus = useMemo(() => getOpenAiStatusText(result?.meta), [result?.meta]);
 
   const submitPrompt = async (promptText, options = {}) => {
     const text = String(promptText || '').trim();
@@ -339,6 +366,7 @@ function AiStylistChat() {
         {hasResult && (
           <div className="ai-stylist-result">
             <div className="ai-stylist-reply">{result.reply_text}</div>
+            <p className={`ai-stylist-engine ${openAiStatus.tone}`}>{openAiStatus.text}</p>
 
             <div className="ai-stylist-actions">
               <button
@@ -354,11 +382,25 @@ function AiStylistChat() {
             <div className="ai-stylist-outfit">
               <h4>Outfit sugerido</h4>
               <ul>
-                <li><strong>Camiseta:</strong> {result?.outfit?.top_main?.nombre || 'Sin sugerencia'}</li>
-                <li><strong>Capa superior (opcional):</strong> {result?.outfit?.top_layer?.nombre || 'Sin sugerencia'}</li>
-                <li><strong>Pantalon:</strong> {result?.outfit?.pantalon?.nombre || result?.outfit?.bottom?.nombre || 'Sin sugerencia'}</li>
-                <li><strong>Shoes:</strong> {result?.outfit?.shoes?.nombre || 'Sin sugerencia'}</li>
-                <li><strong>Gorra (opcional):</strong> {result?.outfit?.extra?.nombre || 'Sin sugerencia'}</li>
+                {SLOT_ORDER.map((slot) => {
+                  const product = slot === 'bottom'
+                    ? (result?.outfit?.bottom || result?.outfit?.pantalon)
+                    : result?.outfit?.[slot];
+                  const reason = result?.outfit_reasons?.[slot];
+
+                  return (
+                    <li key={slot}>
+                      <strong>{SLOT_LABELS[slot]}:</strong> {product?.nombre || 'Sin sugerencia'}
+                      {product && reason && (
+                        <div className="ai-stylist-why">
+                          <p><strong>Estilo:</strong> {reason.style}</p>
+                          <p><strong>Color:</strong> {reason.color}</p>
+                          <p><strong>Presupuesto:</strong> {reason.budget}</p>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
 
@@ -369,6 +411,11 @@ function AiStylistChat() {
                   <div>
                     <h5>{product.nombre}</h5>
                     <p>{Number(product.precio || 0).toFixed(2)} EUR</p>
+                    {result?.product_reasons?.[String(product.id_producto)]?.summary && (
+                      <p className="ai-stylist-product-why">
+                        {result.product_reasons[String(product.id_producto)].summary}
+                      </p>
+                    )}
                     <Link to={`/producto/${product.id_producto}`}>Ver producto</Link>
                   </div>
                 </article>

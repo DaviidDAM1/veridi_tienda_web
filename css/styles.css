@@ -631,6 +631,26 @@ header {
     color: #0f3f3f;
 }
 
+.ai-stylist-engine {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 8px 10px;
+}
+
+.ai-stylist-engine.ok {
+    background: rgba(22, 101, 52, 0.08);
+    border: 1px solid rgba(22, 101, 52, 0.2);
+    color: #166534;
+}
+
+.ai-stylist-engine.warn {
+    background: rgba(180, 83, 9, 0.09);
+    border: 1px solid rgba(180, 83, 9, 0.22);
+    color: #9a3412;
+}
+
 .ai-stylist-actions {
     margin-top: 10px;
 }
@@ -661,6 +681,22 @@ header {
     list-style: none;
     display: grid;
     gap: 5px;
+}
+
+.ai-stylist-why {
+    margin-top: 6px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.04);
+    border: 1px solid rgba(148,163,184,0.28);
+    padding: 7px 9px;
+    display: grid;
+    gap: 3px;
+}
+
+.ai-stylist-why p {
+    margin: 0;
+    font-size: 12px;
+    color: #334155;
 }
 
 .ai-stylist-products {
@@ -699,6 +735,14 @@ header {
     font-weight: 700;
     color: var(--v-accent-2);
     font-size: 13px;
+}
+
+.ai-stylist-product-why {
+    margin: 0 0 7px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #475569;
+    line-height: 1.35;
 }
 
 .ai-stylist-product-card a {

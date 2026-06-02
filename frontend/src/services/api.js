@@ -41,7 +41,7 @@ api.interceptors.response.use(
     }
 
     const retryCount = Number(config.__retryCount || 0);
-    if (retryCount >= 1) {
+    if (retryCount >= 2) {
       return Promise.reject(error);
     }
 

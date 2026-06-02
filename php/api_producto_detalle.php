@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if ($origin === 'http://localhost:5173' || $origin === 'http://127.0.0.1:5173') {
+if ($origin !== '' && preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#', $origin)) {
     header('Access-Control-Allow-Origin: ' . $origin);
     header('Access-Control-Allow-Credentials: true');
 }
@@ -18,6 +18,13 @@ header('Content-Type: application/json; charset=utf-8');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
+}
+
+function limpiarNombreProducto(string $nombre): string
+{
+    $sinFormal = preg_replace('/\bformal\b/i', '', $nombre);
+    $sinEspaciosDobles = preg_replace('/\s+/', ' ', (string)$sinFormal);
+    return trim((string)$sinEspaciosDobles);
 }
 
 $idProducto = isset($_GET['id']) ? (int)$_GET['id'] : 0;
@@ -36,6 +43,10 @@ if (!$producto) {
     http_response_code(404);
     echo json_encode(['ok' => false, 'message' => 'Producto no encontrado']);
     exit;
+}
+
+if (isset($producto['categoria']) && strtolower(trim((string)$producto['categoria'])) === 'gorras') {
+    $producto['estilo'] = 'casual';
 }
 
 $categoriasRopa = ['Camisetas', 'Chaquetas', 'Abrigos', 'Sudaderas', 'Pantalones', 'Vaqueros'];
@@ -81,7 +92,7 @@ if (isset($_SESSION['deseos']) && is_array($_SESSION['deseos'])) {
 
 $productoOut = [
     'id_producto' => (int)$producto['id_producto'],
-    'nombre' => $producto['nombre'],
+    'nombre' => limpiarNombreProducto((string)($producto['nombre'] ?? '')),
     'descripcion' => $producto['descripcion'] ?? '',
     'precio' => (float)$producto['precio'],
     'categoria' => $producto['categoria'] ?? '',
@@ -89,17 +100,18 @@ $productoOut = [
     'color' => $producto['color'] ?? '',
     'material' => $producto['material'] ?? '',
     'estilo' => $producto['estilo'] ?? '',
-    'imagen' => obtenerImagenProducto($idProducto, (string)($producto['nombre'] ?? ''))
+    'imagen' => obtenerImagenProducto($idProducto, limpiarNombreProducto((string)($producto['nombre'] ?? '')))
 ];
 
 $relacionadosOut = array_map(static function ($prod) {
     $idRel = (int)$prod['id_producto'];
+    $nombreLimpio = limpiarNombreProducto((string)($prod['nombre'] ?? ''));
     return [
         'id_producto' => $idRel,
-        'nombre' => $prod['nombre'],
+        'nombre' => $nombreLimpio,
         'precio' => (float)$prod['precio'],
         'descripcion' => $prod['descripcion'] ?? '',
-        'imagen' => obtenerImagenProducto($idRel, (string)($prod['nombre'] ?? ''))
+        'imagen' => obtenerImagenProducto($idRel, $nombreLimpio)
     ];
 }, $relacionados);
 

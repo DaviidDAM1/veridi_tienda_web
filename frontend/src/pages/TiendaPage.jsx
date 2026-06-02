@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { buildBackendAssetUrl } from '../services/api';
@@ -63,6 +63,8 @@ const formatColorLabel = (value) => {
 };
 
 function TiendaPage() {
+  const requestSeqRef = useRef(0);
+  const hasLoadedOnceRef = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [productos, setProductos] = useState([]);
@@ -130,9 +132,12 @@ function TiendaPage() {
   }, [paginacion]);
 
   useEffect(() => {
+    const controller = new AbortController();
+    const currentRequestId = requestSeqRef.current + 1;
+    requestSeqRef.current = currentRequestId;
+
     const fetchProductos = async () => {
       setLoading(true);
-      setError('');
       try {
         const params = {
           buscar: query.buscar || undefined,
@@ -148,25 +153,43 @@ function TiendaPage() {
         if (query.color.length) params.color = query.color;
         if (query.estilo.length) params.estilo = query.estilo;
 
-        const response = await api.get('/php/api_tienda.php', { params });
+        const response = await api.get('/php/api_tienda.php', { params, signal: controller.signal });
         const data = response.data;
+
+        if (currentRequestId !== requestSeqRef.current) {
+          return;
+        }
 
         if (!data?.ok) {
           throw new Error('Respuesta inválida del servidor');
         }
 
+        hasLoadedOnceRef.current = true;
+        setError('');
         setProductos(data.productos || []);
         setFiltrosData(data.filtros || { categorias: [], tallas: [], colores: [], estilos: [] });
         setPaginacion(data.paginacion || { paginaActual: 1, totalPaginas: 1, totalProductos: 0 });
         setContador(data.contador || { carrito: 0, deseos: 0 });
       } catch (err) {
-        setError('No se pudieron cargar los productos.');
+        if (controller.signal.aborted || currentRequestId !== requestSeqRef.current) {
+          return;
+        }
+
+        setError(
+          hasLoadedOnceRef.current
+            ? 'Conexion inestable: mostrando la ultima lista de productos cargada.'
+            : 'No se pudieron cargar los productos.'
+        );
       } finally {
-        setLoading(false);
+        if (currentRequestId === requestSeqRef.current) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProductos();
+
+    return () => controller.abort();
   }, [query]);
 
   const handleBasicChange = (field, value) => {
@@ -462,7 +485,7 @@ function TiendaPage() {
           <p className={favMessage.includes('No se pudo') ? 'error-message' : 'success-message'}>{favMessage}</p>
         )}
 
-        {!loading && !error && (
+        {!loading && (!error || productos.length > 0) && (
           <>
             <div className="cards catalog-grid">
               {productos.length > 0 ? (

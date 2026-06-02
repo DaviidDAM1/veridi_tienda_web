@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if ($origin === 'http://localhost:5173' || $origin === 'http://127.0.0.1:5173') {
+if ($origin !== '' && preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#', $origin)) {
     header('Access-Control-Allow-Origin: ' . $origin);
     header('Access-Control-Allow-Credentials: true');
 }
@@ -24,6 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     http_response_code(405);
     echo json_encode(['ok' => false, 'message' => 'Método no permitido.'], JSON_UNESCAPED_UNICODE);
     exit;
+}
+
+function limpiarNombreProducto(string $nombre): string
+{
+    $sinFormal = preg_replace('/\bformal\b/i', '', $nombre);
+    $sinEspaciosDobles = preg_replace('/\s+/', ' ', (string)$sinFormal);
+    return trim((string)$sinEspaciosDobles);
 }
 
 $stmt = $conexion->query("SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.fecha_creacion, COALESCE(SUM(pd.cantidad), 0) AS total_vendido FROM productos p LEFT JOIN pedido_detalle pd ON pd.id_producto = p.id_producto WHERE (p.oculto = 0 OR p.oculto IS NULL) GROUP BY p.id_producto, p.nombre, p.descripcion, p.precio, p.fecha_creacion");
@@ -43,12 +50,13 @@ if (empty($productos)) {
 
 $normalizar = static function (array $producto): array {
     $id = (int)$producto['id_producto'];
+    $nombreLimpio = limpiarNombreProducto((string)($producto['nombre'] ?? ''));
     return [
         'id_producto' => $id,
-        'nombre' => (string)$producto['nombre'],
+        'nombre' => $nombreLimpio,
         'descripcion' => (string)($producto['descripcion'] ?? ''),
         'precio' => (float)$producto['precio'],
-        'imagen' => obtenerImagenProducto($id, (string)($producto['nombre'] ?? ''))
+        'imagen' => obtenerImagenProducto($id, $nombreLimpio)
     ];
 };
 

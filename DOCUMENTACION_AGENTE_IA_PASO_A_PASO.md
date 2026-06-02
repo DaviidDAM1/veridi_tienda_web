@@ -283,6 +283,46 @@ Solucion:
 - Diversificacion con historial de firmas + variantes por slot.
 
 
+### Problema F: Boton "Crear outfit con esta prenda" no siempre abria el flujo
+
+Causa:
+
+- El boton del detalle de producto dependia de un evento global custom para abrir el chat IA.
+- En algunos escenarios de navegacion ese evento no resolvia el flujo completo de forma fiable.
+
+Solucion:
+
+- Se cambio el flujo a navegacion directa a la ruta de tienda con query params:
+	- ai=open
+	- base_product_id
+	- message
+- Con esto, el chat se abre y auto-lanza la recomendacion de forma determinista.
+
+
+### Problema G: Maximizar chat no se veia bien
+
+Causa:
+
+- El panel maximizado quedaba anclado lateralmente y no siempre aprovechaba bien el viewport.
+
+Solucion:
+
+- Se redefinio el modo maximizado como modal centrado.
+- Se ajustaron ancho/alto maximos y comportamiento responsive para desktop y movil.
+
+
+### Problema H: Boton "Restaurar agente" poco visible
+
+Causa:
+
+- El boton se coloco inicialmente en una zona baja del panel y no era facil de descubrir.
+
+Solucion:
+
+- Se movio a la parte superior del chat para acceso rapido.
+- Se mantuvo la accion de limpieza local + reset del historial de diversidad en backend.
+
+
 ## 5. Resultado final del agente
 
 El agente IA final:

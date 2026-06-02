@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if ($origin === 'http://localhost:5173' || $origin === 'http://127.0.0.1:5173') {
+if ($origin !== '' && preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$#', $origin)) {
     header('Access-Control-Allow-Origin: ' . $origin);
     header('Access-Control-Allow-Credentials: true');
 }
@@ -18,6 +18,13 @@ header('Content-Type: application/json; charset=utf-8');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
+}
+
+function limpiarNombreProducto(string $nombre): string
+{
+    $sinFormal = preg_replace('/\bformal\b/i', '', $nombre);
+    $sinEspaciosDobles = preg_replace('/\s+/', ' ', (string)$sinFormal);
+    return trim((string)$sinEspaciosDobles);
 }
 
 function getArrayParam(string $key): array
@@ -108,7 +115,7 @@ if (!empty($estilos)) {
         $placeholders[] = $ph;
         $params[$ph] = $estilo;
     }
-    $whereParts[] = 'p.estilo IN (' . implode(',', $placeholders) . ')';
+    $whereParts[] = '(CASE WHEN LOWER(TRIM(c.nombre)) = "gorras" THEN "casual" ELSE p.estilo END) IN (' . implode(',', $placeholders) . ')';
 }
 
 $whereSql = 'WHERE ' . implode(' AND ', $whereParts);
@@ -174,13 +181,14 @@ if (!empty($_SESSION['deseos']) && is_array($_SESSION['deseos'])) {
 
 $productosOut = array_map(static function ($producto) use ($deseosIds) {
     $idProducto = (int)$producto['id_producto'];
+    $nombreLimpio = limpiarNombreProducto((string)($producto['nombre'] ?? ''));
     return [
         'id_producto' => $idProducto,
-        'nombre' => $producto['nombre'],
+        'nombre' => $nombreLimpio,
         'descripcion' => $producto['descripcion'],
         'precio' => (float)$producto['precio'],
         'categoria' => $producto['categoria'],
-        'imagen' => obtenerImagenProducto($idProducto, (string)($producto['nombre'] ?? '')),
+        'imagen' => obtenerImagenProducto($idProducto, $nombreLimpio),
         'es_favorito' => isset($deseosIds[$idProducto])
     ];
 }, $productos);
@@ -194,7 +202,7 @@ $tallasDisponibles = array_map(static fn($row) => $row['nombre'], $stmtTallas->f
 $stmtColores = $conexion->query("SELECT DISTINCT color FROM productos WHERE color IS NOT NULL AND color != '' AND (oculto = 0 OR oculto IS NULL) ORDER BY color ASC");
 $coloresDisponibles = array_map(static fn($row) => $row['color'], $stmtColores->fetchAll(PDO::FETCH_ASSOC));
 
-$stmtEstilos = $conexion->query("SELECT DISTINCT estilo FROM productos WHERE estilo IS NOT NULL AND estilo != '' AND (oculto = 0 OR oculto IS NULL) ORDER BY estilo ASC");
+$stmtEstilos = $conexion->query("SELECT DISTINCT CASE WHEN LOWER(TRIM(c.nombre)) = 'gorras' THEN 'casual' ELSE p.estilo END AS estilo FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.estilo IS NOT NULL AND p.estilo != '' AND (p.oculto = 0 OR p.oculto IS NULL) ORDER BY estilo ASC");
 $estilosDisponibles = array_map(static fn($row) => $row['estilo'], $stmtEstilos->fetchAll(PDO::FETCH_ASSOC));
 
 $cantidadCarrito = 0;

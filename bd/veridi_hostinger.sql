@@ -279,7 +279,12 @@ INSERT INTO productos (nombre, descripcion, precio, color, estilo, material, id_
 ('Zapatillas Running Negras', 'Zapatilla running negra con suela de alta respuesta.', 64.90, 'Negro', 'deportivo', 'Malla tecnica', 7),
 ('Zapatillas TN Blancas', 'Sneaker blanca de estilo urbano con camara visible.', 100.00, 'Blanco', 'casual', 'Textil y sintetico', 7),
 ('Zapatillas TN Negras', 'Sneaker negra de estilo urbano con camara visible.', 100.00, 'Negro', 'casual', 'Textil y sintetico', 7),
-('Zapatillas Urban Blancas', 'Sneaker urbana blanca de perfil bajo para combinaciones limpias.', 90.00, 'Blanco', 'casual', 'Cuero sintetico', 7);
+('Zapatillas Urban Blancas', 'Sneaker urbana blanca de perfil bajo para combinaciones limpias.', 90.00, 'Blanco', 'casual', 'Cuero sintetico', 7),
+
+('Pantalon Cargo Beige', 'Pantalon cargo premium en tono beige con corte estilizado y acabado formal.', 59.90, 'Beige', 'formal', 'Algodon premium con elastano', 5),
+('Pantalon Cargo Blanco', 'Pantalon cargo blanco con fit moderno para estilismos elegantes de diario.', 59.90, 'Blanco', 'formal', 'Algodon premium con elastano', 5),
+('Pantalon Cargo Negro', 'Pantalon cargo negro de presencia sobria para combinaciones formales contemporaneas.', 59.90, 'Negro', 'formal', 'Algodon premium con elastano', 5),
+('Pantalon Cargo Verde', 'Pantalon cargo verde oliva con estructura limpia y estilo formal actual.', 59.90, 'Verde', 'formal', 'Algodon premium con elastano', 5);
 
 
 INSERT INTO producto_tallas (id_producto, id_talla, stock)

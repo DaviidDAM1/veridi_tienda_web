@@ -49,6 +49,24 @@ function estiloValido(string $estilo): bool
     return in_array($estilo, ['casual', 'formal', 'deportivo'], true);
 }
 
+function categoriaEsGorras(PDO $conexion, int $idCategoria): bool
+{
+    if ($idCategoria <= 0) {
+        return false;
+    }
+
+    $stmt = $conexion->prepare("SELECT nombre FROM categorias WHERE id_categoria = :id_categoria LIMIT 1");
+    $stmt->bindParam(':id_categoria', $idCategoria, PDO::PARAM_INT);
+    $stmt->execute();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$row) {
+        return false;
+    }
+
+    return mb_strtolower(trim((string)$row['nombre']), 'UTF-8') === 'gorras';
+}
+
 function getAdminData(PDO $conexion): array
 {
     $stmtCategorias = $conexion->query("SELECT id_categoria, nombre FROM categorias ORDER BY nombre ASC");
@@ -58,7 +76,9 @@ function getAdminData(PDO $conexion): array
     $tallas = $stmtTallas->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
     $stmtProductos = $conexion->query("
-        SELECT p.id_producto, p.nombre, p.precio, p.estilo, p.oculto, c.nombre AS categoria, COALESCE(SUM(pt.stock), 0) AS stock_total
+        SELECT p.id_producto, p.nombre, p.precio,
+               CASE WHEN LOWER(TRIM(c.nombre)) = 'gorras' THEN 'casual' ELSE p.estilo END AS estilo,
+               p.oculto, c.nombre AS categoria, COALESCE(SUM(pt.stock), 0) AS stock_total
         FROM productos p
         LEFT JOIN categorias c ON c.id_categoria = p.id_categoria
         LEFT JOIN producto_tallas pt ON pt.id_producto = p.id_producto
@@ -139,6 +159,10 @@ try {
             $idCategoria = (int)($payload['id_categoria'] ?? 0);
             $stockInicial = (int)($payload['stock_inicial'] ?? 0);
 
+            if (categoriaEsGorras($conexion, $idCategoria)) {
+                $estilo = 'casual';
+            }
+
             if ($nombre === '' || $precio <= 0 || $idCategoria <= 0 || !estiloValido($estilo)) {
                 throw new InvalidArgumentException('Datos inválidos al crear producto.');
             }
@@ -184,6 +208,10 @@ try {
             $estilo = trim((string)($payload['estilo'] ?? 'casual'));
             $material = trim((string)($payload['material'] ?? ''));
             $idCategoria = (int)($payload['id_categoria'] ?? 0);
+
+            if (categoriaEsGorras($conexion, $idCategoria)) {
+                $estilo = 'casual';
+            }
 
             if ($idProducto <= 0 || $nombre === '' || $precio <= 0 || $idCategoria <= 0 || !estiloValido($estilo)) {
                 throw new InvalidArgumentException('Datos inválidos al editar producto.');

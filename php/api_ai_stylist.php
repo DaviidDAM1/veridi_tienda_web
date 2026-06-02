@@ -32,13 +32,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST' && $_SERVER['REQUEST_METHOD'] !== 'GET
 function mapProducto(array $producto): array
 {
 	$idProducto = (int)($producto['id_producto'] ?? 0);
+	$categoria = (string)($producto['categoria'] ?? '');
+	$estilo = (string)($producto['estilo'] ?? '');
+	if (normalizeText($categoria) === 'gorras') {
+		$estilo = 'casual';
+	}
 	return [
 		'id_producto' => $idProducto,
 		'nombre' => (string)($producto['nombre'] ?? ''),
 		'precio' => (float)($producto['precio'] ?? 0),
-		'categoria' => (string)($producto['categoria'] ?? ''),
+		'categoria' => $categoria,
 		'color' => (string)($producto['color'] ?? ''),
-		'estilo' => (string)($producto['estilo'] ?? ''),
+		'estilo' => $estilo,
 		'imagen' => obtenerImagenProducto($idProducto, (string)($producto['nombre'] ?? ''))
 	];
 }
@@ -78,6 +83,43 @@ function detectStyleFromMessage(string $message): ?string
 	}
 
 	return null;
+}
+
+function normalizeStyleValue(?string $style): string
+{
+	$text = normalizeText((string)($style ?? ''));
+	if ($text === '') {
+		return '';
+	}
+
+	if (preg_match('/gym|gimnasio|deporte|deportivo|entreno|running|correr|sport/', $text)) {
+		return 'deportivo';
+	}
+
+	if (preg_match('/formal|elegante|oficina|trabajo|evento|cena|boda/', $text)) {
+		return 'formal';
+	}
+
+	if (preg_match('/casual|diario|dia a dia|urbano|street|calle/', $text)) {
+		return 'casual';
+	}
+
+	return $text;
+}
+
+function isStyleCompatible(?string $preferredStyle, array $producto): bool
+{
+	$preferred = normalizeStyleValue($preferredStyle);
+	if ($preferred === '') {
+		return true;
+	}
+
+	$productStyle = normalizeStyleValue((string)($producto['estilo'] ?? ''));
+	if ($productStyle === '') {
+		return false;
+	}
+
+	return $productStyle === $preferred;
 }
 
 function detectColorsFromMessage(string $message): array
@@ -191,6 +233,38 @@ function pickFromScoredByCategories(array $scored, array $allowedCategories, arr
 	return null;
 }
 
+function pickFromScoredByCategoriesWithStyle(
+	array $scored,
+	array $allowedCategories,
+	array $selectedIds,
+	?string $preferredStyle
+): ?array {
+	$preferred = normalizeStyleValue($preferredStyle);
+
+	if ($preferred !== '') {
+		foreach ($scored as $candidate) {
+			$idCandidate = (int)($candidate['id_producto'] ?? 0);
+			if ($idCandidate <= 0 || isset($selectedIds[$idCandidate])) {
+				continue;
+			}
+			$candidateCategory = normalizeText((string)($candidate['categoria'] ?? ''));
+			if (!in_array($candidateCategory, $allowedCategories, true)) {
+				continue;
+			}
+			if (!isStyleCompatible($preferred, $candidate)) {
+				continue;
+			}
+			unset($candidate['_score']);
+			return $candidate;
+		}
+
+		// Strict mode: when user asks for a style, do not fallback to other styles.
+		return null;
+	}
+
+	return pickFromScoredByCategories($scored, $allowedCategories, $selectedIds);
+}
+
 function stripInternalProductFields(array $products): array
 {
 	$out = [];
@@ -235,6 +309,163 @@ function calculateOutfitTotal(array $outfit): float
 	return round($total, 2);
 }
 
+function slotLabel(string $slot): string
+{
+	$labels = [
+		'top_main' => 'Camiseta',
+		'top_layer' => 'Capa superior',
+		'bottom' => 'Pantalon',
+		'shoes' => 'Calzado',
+		'extra' => 'Gorra'
+	];
+
+	return $labels[$slot] ?? 'Prenda';
+}
+
+function buildProductWhy(
+	array $product,
+	string $slot,
+	?string $preferredStyle,
+	array $preferredColors,
+	?float $presupuesto,
+	float $outfitTotal,
+	bool $budgetRespected
+): array {
+	$productStyleRaw = (string)($product['estilo'] ?? '');
+	$productStyle = normalizeStyleValue($productStyleRaw);
+	$wantedStyle = normalizeStyleValue($preferredStyle);
+	$productColorRaw = (string)($product['color'] ?? '');
+	$productColor = normalizeText($productColorRaw);
+	$price = (float)($product['precio'] ?? 0);
+
+	if ($wantedStyle !== '') {
+		if ($productStyle !== '' && $productStyle === $wantedStyle) {
+			$styleReason = 'Encaja con el estilo solicitado: ' . $wantedStyle . '.';
+		} elseif ($productStyle !== '') {
+			$styleReason = 'Aporta variedad de estilo (' . $productStyle . ') frente al estilo solicitado (' . $wantedStyle . ').';
+		} else {
+			$styleReason = 'Se eligio por combinacion general del look.';
+		}
+	} else {
+		$styleReason = $productStyle !== ''
+			? 'Se selecciono por su estilo ' . $productStyle . ' y compatibilidad del conjunto.'
+			: 'Se selecciono por compatibilidad general del conjunto.';
+	}
+
+	if (!empty($preferredColors)) {
+		if ($productColor !== '' && in_array($productColor, $preferredColors, true)) {
+			$colorReason = 'Respeta tu preferencia de color: ' . $productColorRaw . '.';
+		} elseif ($productColor !== '') {
+			$colorReason = 'Aporta contraste de color (' . $productColorRaw . ') para equilibrar el outfit.';
+		} else {
+			$colorReason = 'El color se priorizo por armonia global del outfit.';
+		}
+	} else {
+		$colorReason = $productColor !== ''
+			? 'Color elegido para combinar bien con el resto: ' . $productColorRaw . '.'
+			: 'Color elegido por armonia del conjunto.';
+	}
+
+	if ($presupuesto !== null && $presupuesto > 0) {
+		if ($budgetRespected) {
+			$budgetReason = 'Precio de la prenda (€' . number_format($price, 2, ',', '.') . ') compatible con el presupuesto total.';
+		} else {
+			$budgetReason = 'Se priorizo esta prenda por calidad de combinacion aunque el total supere el presupuesto.';
+		}
+	} else {
+		$budgetReason = 'No se aplico limite de presupuesto en esta recomendacion.';
+	}
+
+	$summary = 'Elegida como ' . mb_strtolower(slotLabel($slot), 'UTF-8')
+		. ' por estilo, color y equilibrio del presupuesto del look.';
+
+	return [
+		'slot' => $slot,
+		'slot_label' => slotLabel($slot),
+		'style' => $styleReason,
+		'color' => $colorReason,
+		'budget' => $budgetReason,
+		'summary' => $summary,
+		'outfit_total' => $outfitTotal,
+		'budget_limit' => $presupuesto
+	];
+}
+
+function buildOutfitReasons(
+	array $outfit,
+	?string $preferredStyle,
+	array $preferredColors,
+	?float $presupuesto,
+	float $outfitTotal,
+	bool $budgetRespected
+): array {
+	$reasons = [];
+	foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $slot) {
+		$product = $outfit[$slot] ?? null;
+		if (!is_array($product)) {
+			continue;
+		}
+
+		$reasons[$slot] = buildProductWhy(
+			$product,
+			$slot,
+			$preferredStyle,
+			$preferredColors,
+			$presupuesto,
+			$outfitTotal,
+			$budgetRespected
+		);
+	}
+
+	return $reasons;
+}
+
+function buildProductReasons(array $recommended, array $outfitReasons, array $outfit): array
+{
+	$out = [];
+	foreach ($recommended as $product) {
+		if (!is_array($product)) {
+			continue;
+		}
+
+		$id = (int)($product['id_producto'] ?? 0);
+		if ($id <= 0) {
+			continue;
+		}
+
+		$reason = null;
+		foreach ($outfitReasons as $slotReason) {
+			if (!is_array($slotReason)) {
+				continue;
+			}
+			if ((string)($slotReason['slot'] ?? '') === '') {
+				continue;
+			}
+			$slot = (string)$slotReason['slot'];
+			$outfitProduct = $outfit[$slot] ?? null;
+			if (is_array($outfitProduct) && (int)($outfitProduct['id_producto'] ?? 0) === $id) {
+				$reason = $slotReason;
+				break;
+			}
+		}
+
+		if ($reason === null) {
+			$reason = [
+				'slot' => null,
+				'slot_label' => 'Recomendacion',
+				'style' => 'Seleccionada por afinidad general de estilo con el conjunto.',
+				'color' => 'Seleccionada por combinacion de color con las prendas principales.',
+				'budget' => 'Incluida por su aporte global al equilibrio del look.',
+				'summary' => 'Recomendada como opcion complementaria para completar el outfit.'
+			];
+		}
+
+		$out[(string)$id] = $reason;
+	}
+
+	return $out;
+}
+
 function withPantalonAlias(array $outfit): array
 {
 	if (!array_key_exists('pantalon', $outfit)) {
@@ -242,6 +473,79 @@ function withPantalonAlias(array $outfit): array
 	}
 
 	return $outfit;
+}
+
+function enforceStrictStyleSelection(array $outfit, array $recommended, ?string $preferredStyle): array
+{
+	$strictStyle = normalizeStyleValue($preferredStyle);
+	if ($strictStyle === '') {
+		return [
+			'outfit' => withPantalonAlias($outfit),
+			'recommended_products' => $recommended,
+			'removed_items' => 0,
+			'applied' => false
+		];
+	}
+
+	$removedItems = 0;
+	$normalized = [
+		'top_main' => is_array($outfit['top_main'] ?? null) ? $outfit['top_main'] : null,
+		'top_layer' => is_array($outfit['top_layer'] ?? null) ? $outfit['top_layer'] : null,
+		'bottom' => is_array($outfit['bottom'] ?? null) ? $outfit['bottom'] : (is_array($outfit['pantalon'] ?? null) ? $outfit['pantalon'] : null),
+		'shoes' => is_array($outfit['shoes'] ?? null) ? $outfit['shoes'] : null,
+		'extra' => is_array($outfit['extra'] ?? null) ? $outfit['extra'] : null
+	];
+
+	foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $slot) {
+		$current = $normalized[$slot] ?? null;
+		if (!is_array($current)) {
+			continue;
+		}
+		if (!isStyleCompatible($strictStyle, $current)) {
+			$normalized[$slot] = null;
+			$removedItems++;
+		}
+	}
+
+	$outfitIds = [];
+	foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $slot) {
+		$id = (int)(is_array($normalized[$slot] ?? null) ? ($normalized[$slot]['id_producto'] ?? 0) : 0);
+		if ($id > 0) {
+			$outfitIds[$id] = true;
+		}
+	}
+
+	$filteredRecommended = [];
+	$seen = [];
+	foreach ($recommended as $item) {
+		if (!is_array($item)) {
+			continue;
+		}
+		$id = (int)($item['id_producto'] ?? 0);
+		if ($id <= 0 || isset($seen[$id])) {
+			continue;
+		}
+		if (!isStyleCompatible($strictStyle, $item)) {
+			$removedItems++;
+			continue;
+		}
+		if (!isset($outfitIds[$id])) {
+			continue;
+		}
+		$filteredRecommended[] = $item;
+		$seen[$id] = true;
+	}
+
+	if (empty($filteredRecommended)) {
+		$filteredRecommended = buildRecommendedFromOutfit($normalized);
+	}
+
+	return [
+		'outfit' => withPantalonAlias($normalized),
+		'recommended_products' => $filteredRecommended,
+		'removed_items' => $removedItems,
+		'applied' => true
+	];
 }
 
 function buildOutfitSignature(array $outfit): string
@@ -260,7 +564,7 @@ function buildOutfitSignature(array $outfit): string
 	return implode('-', $parts);
 }
 
-function buildSlotPools(array $pool, array $slotCategories): array
+function buildSlotPools(array $pool, array $slotCategories, ?string $preferredStyle = null): array
 {
 	$poolBySlot = [
 		'top_main' => [],
@@ -283,10 +587,33 @@ function buildSlotPools(array $pool, array $slotCategories): array
 		}
 	}
 
+	$preferred = normalizeStyleValue($preferredStyle);
+	if ($preferred === '') {
+		return $poolBySlot;
+	}
+
+	foreach ($poolBySlot as $slot => $items) {
+		$matchingStyle = [];
+		foreach ($items as $item) {
+			if (isStyleCompatible($preferred, $item)) {
+				$matchingStyle[] = $item;
+			}
+		}
+		// Strict mode: keep only requested style, even if slot becomes empty.
+		$poolBySlot[$slot] = array_values($matchingStyle);
+	}
+
 	return $poolBySlot;
 }
 
-function diversifyOutfitWithHistory(array $outfit, array $pool, array $slotCategories, ?float $budget, bool $mandatoryRequired): array
+function diversifyOutfitWithHistory(
+	array $outfit,
+	array $pool,
+	array $slotCategories,
+	?float $budget,
+	bool $mandatoryRequired,
+	?string $preferredStyle
+): array
 {
 	$normalized = [
 		'top_main' => is_array($outfit['top_main'] ?? null) ? $outfit['top_main'] : null,
@@ -296,7 +623,7 @@ function diversifyOutfitWithHistory(array $outfit, array $pool, array $slotCateg
 		'extra' => is_array($outfit['extra'] ?? null) ? $outfit['extra'] : null
 	];
 
-	$poolBySlot = buildSlotPools($pool, $slotCategories);
+	$poolBySlot = buildSlotPools($pool, $slotCategories, $preferredStyle);
 	$recentSignatures = isset($_SESSION['ai_stylist_recent_outfits']) && is_array($_SESSION['ai_stylist_recent_outfits'])
 		? $_SESSION['ai_stylist_recent_outfits']
 		: [];
@@ -406,7 +733,13 @@ function diversifyOutfitWithHistory(array $outfit, array $pool, array $slotCateg
 	return withPantalonAlias($bestVariant);
 }
 
-function normalizeOutfitToBudget(array $outfit, array $pool, array $slotCategories, ?float $budget): array
+function normalizeOutfitToBudget(
+	array $outfit,
+	array $pool,
+	array $slotCategories,
+	?float $budget,
+	?string $preferredStyle
+): array
 {
 	$normalized = [
 		'top_main' => is_array($outfit['top_main'] ?? null) ? $outfit['top_main'] : null,
@@ -422,26 +755,7 @@ function normalizeOutfitToBudget(array $outfit, array $pool, array $slotCategori
 		$originalSignature[$slot] = (int)(is_array($normalized[$slot]) ? ($normalized[$slot]['id_producto'] ?? 0) : 0);
 	}
 
-	$poolBySlot = [
-		'top_main' => [],
-		'top_layer' => [],
-		'bottom' => [],
-		'shoes' => [],
-		'extra' => []
-	];
-
-	foreach ($pool as $product) {
-		if (!is_array($product)) {
-			continue;
-		}
-		$category = normalizeText((string)($product['categoria'] ?? ''));
-		foreach ($slotCategories as $slot => $allowedCategories) {
-			if (in_array($category, $allowedCategories, true)) {
-				$poolBySlot[$slot][] = $product;
-				break;
-			}
-		}
-	}
+	$poolBySlot = buildSlotPools($pool, $slotCategories, $preferredStyle);
 
 	foreach ($poolBySlot as $slot => $items) {
 		usort($items, static function ($a, $b) {
@@ -453,6 +767,46 @@ function normalizeOutfitToBudget(array $outfit, array $pool, array $slotCategori
 			return $priceA <=> $priceB;
 		});
 		$poolBySlot[$slot] = $items;
+	}
+
+	foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $slot) {
+		$current = $normalized[$slot] ?? null;
+		if (!is_array($current)) {
+			continue;
+		}
+		if (isStyleCompatible($preferredStyle, $current)) {
+			continue;
+		}
+
+		$foundReplacement = false;
+
+		foreach ($poolBySlot[$slot] as $candidate) {
+			$candidateId = (int)($candidate['id_producto'] ?? 0);
+			if ($candidateId <= 0) {
+				continue;
+			}
+			$used = false;
+			foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $otherSlot) {
+				if ($otherSlot === $slot) {
+					continue;
+				}
+				$otherId = (int)(is_array($normalized[$otherSlot] ?? null) ? ($normalized[$otherSlot]['id_producto'] ?? 0) : 0);
+				if ($otherId === $candidateId) {
+					$used = true;
+					break;
+				}
+			}
+
+			if (!$used) {
+				$normalized[$slot] = $candidate;
+				$foundReplacement = true;
+				break;
+			}
+		}
+
+		if (!$foundReplacement) {
+			$normalized[$slot] = null;
+		}
 	}
 
 	$cheapestMandatoryTotal = 0.0;
@@ -657,6 +1011,7 @@ function callOpenAiStylist(
 	string $apiKey,
 	string $message,
 	?float $presupuesto,
+	?string $preferredStyle,
 	?array $baseProduct,
 	array $candidatePool
 ): ?array {
@@ -680,12 +1035,14 @@ function callOpenAiStylist(
 		. "- pantalon: categoria Pantalones o Vaqueros (obligatorio si existe candidata).\n"
 		. "- shoes: categoria Calzado (obligatorio si existe candidata).\n"
 		. "- extra: categoria Gorras (opcional).\n"
+		. "- Si preferred_style viene informado (formal/casual/deportivo), SOLO puedes usar productos de ese estilo. Si para un slot no existe producto de ese estilo, devuelve null en ese slot.\n"
 		. "No inventes productos ni IDs. Devuelve SOLO JSON valido con esta forma:\n"
 		. "{\"reply_text\":\"...\",\"outfit\":{\"top_main\":id|null,\"top_layer\":id|null,\"pantalon\":id|null,\"shoes\":id|null,\"extra\":id|null},\"recommended_ids\":[id1,id2,...]}";
 
 	$userPayload = [
 		'message' => $message,
 		'presupuesto' => $presupuesto,
+		'preferred_style' => normalizeStyleValue($preferredStyle),
 		'base_product' => $baseInfo,
 		'candidate_products' => $candidatePool,
 		'variation_hint' => (string)microtime(true)
@@ -744,7 +1101,7 @@ function callOpenAiStylist(
 	return $parsed;
 }
 
-function sanitizeOpenAiStylistResult(array $aiResult, array $candidatePool): ?array
+function sanitizeOpenAiStylistResult(array $aiResult, array $candidatePool, ?string $preferredStyle): ?array
 {
 	$idMap = [];
 	foreach ($candidatePool as $item) {
@@ -776,6 +1133,7 @@ function sanitizeOpenAiStylistResult(array $aiResult, array $candidatePool): ?ar
 
 	$rawOutfit = is_array($aiResult['outfit'] ?? null) ? $aiResult['outfit'] : [];
 	$usedIds = [];
+	$strictStyle = normalizeStyleValue($preferredStyle);
 
 	foreach ($outfitIds as $slot => $_) {
 		$rawId = $rawOutfit[$slot] ?? null;
@@ -804,6 +1162,11 @@ function sanitizeOpenAiStylistResult(array $aiResult, array $candidatePool): ?ar
 			continue;
 		}
 
+		if ($strictStyle !== '' && !isStyleCompatible($strictStyle, $idMap[$id])) {
+			$outfitIds[$slot] = null;
+			continue;
+		}
+
 		$outfitIds[$slot] = $id;
 		$usedIds[$id] = true;
 	}
@@ -820,6 +1183,9 @@ function sanitizeOpenAiStylistResult(array $aiResult, array $candidatePool): ?ar
 	foreach ($rawRec as $rawId) {
 		$id = (int)$rawId;
 		if ($id <= 0 || !isset($idMap[$id])) {
+			continue;
+		}
+		if ($strictStyle !== '' && !isStyleCompatible($strictStyle, $idMap[$id])) {
 			continue;
 		}
 		if (!in_array($id, $recommendedIds, true)) {
@@ -950,10 +1316,8 @@ try {
 		$candidates[] = $mapped;
 	}
 
-	$preferredStyle = $baseProduct['estilo'] ?? null;
-	if (!$preferredStyle) {
-		$preferredStyle = detectStyleFromMessage($message);
-	}
+	$messageStyle = detectStyleFromMessage($message);
+	$preferredStyle = $messageStyle ?: ($baseProduct['estilo'] ?? null);
 	$preferredColors = detectColorsFromMessage($message);
 
 	$scored = [];
@@ -1000,7 +1364,7 @@ try {
 	}
 
 	if ($outfit['top_main'] === null) {
-		$pick = pickFromScoredByCategories($scored, $slotCategories['top_main'], $selectedIds);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['top_main'], $selectedIds, $preferredStyle);
 		if ($pick !== null) {
 			$outfit['top_main'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1008,7 +1372,7 @@ try {
 	}
 
 	if ($outfit['top_layer'] === null) {
-		$pick = pickFromScoredByCategories($scored, $slotCategories['top_layer'], $selectedIds);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['top_layer'], $selectedIds, $preferredStyle);
 		if ($pick !== null) {
 			$outfit['top_layer'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1016,7 +1380,7 @@ try {
 	}
 
 	if ($outfit['bottom'] === null) {
-		$pick = pickFromScoredByCategories($scored, $slotCategories['bottom'], $selectedIds);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['bottom'], $selectedIds, $preferredStyle);
 		if ($pick !== null) {
 			$outfit['bottom'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1024,7 +1388,7 @@ try {
 	}
 
 	if ($outfit['shoes'] === null) {
-		$pick = pickFromScoredByCategories($scored, $slotCategories['shoes'], $selectedIds);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['shoes'], $selectedIds, $preferredStyle);
 		if ($pick !== null) {
 			$outfit['shoes'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1032,7 +1396,7 @@ try {
 	}
 
 	if ($outfit['extra'] === null) {
-		$pick = pickFromScoredByCategories($scored, $slotCategories['extra'], $selectedIds);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['extra'], $selectedIds, $preferredStyle);
 		if ($pick !== null) {
 			$outfit['extra'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1056,9 +1420,9 @@ try {
 	$candidatePool = array_values(array_slice($scoredPool, 0, 30));
 
 	if ($apiKey !== '') {
-		$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $baseProduct, $candidatePool);
+		$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool);
 		if (is_array($aiRaw)) {
-			$aiClean = sanitizeOpenAiStylistResult($aiRaw, $candidatePool);
+			$aiClean = sanitizeOpenAiStylistResult($aiRaw, $candidatePool, $preferredStyle);
 			if (is_array($aiClean)) {
 				$reply = $aiClean['reply_text'];
 				$recommended = $aiClean['recommended_products'];
@@ -1068,7 +1432,7 @@ try {
 		}
 	}
 
-	$budgetNormalization = normalizeOutfitToBudget($outfit, $scoredPool, $slotCategories, $presupuesto);
+	$budgetNormalization = normalizeOutfitToBudget($outfit, $scoredPool, $slotCategories, $presupuesto, $preferredStyle);
 	$outfit = $budgetNormalization['outfit'];
 	$recommended = $budgetNormalization['recommended_products'];
 	$outfitTotal = (float)($budgetNormalization['total'] ?? 0);
@@ -1077,12 +1441,47 @@ try {
 	$mandatoryRequired = (bool)($budgetNormalization['mandatory_required'] ?? false);
 
 	$signatureBeforeDiversity = buildOutfitSignature($outfit);
-	$outfit = diversifyOutfitWithHistory($outfit, $scoredPool, $slotCategories, $presupuesto, $mandatoryRequired);
+	$outfit = diversifyOutfitWithHistory($outfit, $scoredPool, $slotCategories, $presupuesto, $mandatoryRequired, $preferredStyle);
 	$signatureAfterDiversity = buildOutfitSignature($outfit);
 	$recommended = buildRecommendedFromOutfit($outfit);
+	$strictEnforcement = enforceStrictStyleSelection($outfit, $recommended, $preferredStyle);
+	$outfit = $strictEnforcement['outfit'];
+	$recommended = $strictEnforcement['recommended_products'];
+	$strictStyleApplied = (bool)($strictEnforcement['applied'] ?? false);
+	$strictStyleRemovedItems = (int)($strictEnforcement['removed_items'] ?? 0);
 	$outfitTotal = calculateOutfitTotal($outfit);
 	$budgetRespected = $presupuesto === null || $presupuesto <= 0 ? true : ($outfitTotal <= $presupuesto);
 	$diversified = $signatureBeforeDiversity !== $signatureAfterDiversity;
+	$strictStyleRequested = normalizeStyleValue($preferredStyle) !== '';
+	$missingMandatoryByStyle =
+		!is_array($outfit['top_main'] ?? null)
+		|| !is_array($outfit['bottom'] ?? null)
+		|| !is_array($outfit['shoes'] ?? null);
+
+	if ($strictStyleRequested && $missingMandatoryByStyle) {
+		$reply = 'Aplique filtro estricto por estilo y no hay suficientes prendas disponibles para completar camiseta, pantalon y calzado solo en ese estilo.';
+	}
+
+	$openAiStatus = 'openai_ok';
+	if (!$llmUsed) {
+		if (!$openAiConfigured) {
+			$openAiStatus = 'openai_no_config';
+		} elseif (!$curlAvailable) {
+			$openAiStatus = 'openai_no_curl';
+		} else {
+			$openAiStatus = 'openai_fallback';
+		}
+	}
+
+	$outfitReasons = buildOutfitReasons(
+		$outfit,
+		$preferredStyle,
+		$preferredColors,
+		$presupuesto,
+		$outfitTotal,
+		$budgetRespected
+	);
+	$productReasons = buildProductReasons($recommended, $outfitReasons, $outfit);
 
 	if ($presupuesto !== null && $presupuesto > 0 && !$budgetRespected) {
 		$reply = 'Con el presupuesto indicado no hay combinacion completa disponible. Te muestro la mejor alternativa posible.';
@@ -1099,16 +1498,22 @@ try {
 		'reply_text' => $reply,
 		'recommended_products' => $recommended,
 		'outfit' => $outfit,
+		'outfit_reasons' => $outfitReasons,
+		'product_reasons' => $productReasons,
 		'meta' => [
 			'mvp_mode' => !$llmUsed,
 			'llm_used' => $llmUsed,
+			'openai_status' => $openAiStatus,
 			'openai_configured' => $openAiConfigured,
 			'curl_available' => $curlAvailable,
 			'outfit_total' => $outfitTotal,
 			'budget_respected' => $budgetRespected,
 			'budget_adjusted' => $budgetAdjusted,
 			'diversified' => $diversified,
+			'strict_style_applied' => $strictStyleApplied,
+			'strict_style_removed_items' => $strictStyleRemovedItems,
 			'mandatory_required' => $mandatoryRequired,
+			'preferred_style' => normalizeStyleValue($preferredStyle),
 			'used_base_product' => $baseProduct !== null,
 			'used_budget' => $presupuesto !== null && $presupuesto > 0,
 			'message' => $message

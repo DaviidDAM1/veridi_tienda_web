@@ -64,6 +64,18 @@ $imagenesProducto = [
     51 => 'imgnuevas/zapatillasTNblancas.png',
     52 => 'imgnuevas/zapatillasTNnegras.png',
     53 => 'imgnuevas/zapatillasBlancas.png',
+
+    // Pantalones cargo formales
+    54 => 'imgnuevas/pantalonesCargoMarrones.png',
+    55 => 'imgnuevas/pantalonNegroBlanco.png',
+    56 => 'imgnuevas/pantalonNegroCargo.png',
+    57 => 'imgnuevas/pantalonVerdeCargo.png',
+
+    // Mapeo para BD ya poblada (IDs reales actuales)
+    58 => 'imgnuevas/pantalonesCargoMarrones.png',
+    59 => 'imgnuevas/pantalonNegroBlanco.png',
+    60 => 'imgnuevas/pantalonNegroCargo.png',
+    61 => 'imgnuevas/pantalonVerdeCargo.png',
 ];
 
 function normalizarNombreImagen($texto)
@@ -96,12 +108,33 @@ function obtenerImagenProducto($idProducto, $nombreProducto = '') {
         'zapatillas running negras' => 'imgnuevas/zapatillasRunningNegras.png',
         'zapatillas tn blancas' => 'imgnuevas/zapatillasTNblancas.png',
         'zapatillas tn negras' => 'imgnuevas/zapatillasTNnegras.png',
-        'zapatillas urban blancas' => 'imgnuevas/zapatillasBlancas.png'
+        'zapatillas urban blancas' => 'imgnuevas/zapatillasBlancas.png',
+
+        'pantalon cargo beige' => 'imgnuevas/pantalonesCargoMarrones.png',
+        'pantalon cargo blanco' => 'imgnuevas/pantalonNegroBlanco.png',
+        'pantalon cargo negro' => 'imgnuevas/pantalonNegroCargo.png',
+        'pantalon cargo verde' => 'imgnuevas/pantalonVerdeCargo.png'
     ];
 
     $claveNombre = normalizarNombreImagen($nombreProducto);
     if ($claveNombre !== '' && isset($mapaPorNombre[$claveNombre])) {
         return $mapaPorNombre[$claveNombre];
+    }
+
+    // Fallback flexible para nombres con variaciones (plural, sufijos, etc.)
+    if ($claveNombre !== '' && strpos($claveNombre, 'cargo') !== false) {
+        if (strpos($claveNombre, 'beige') !== false || strpos($claveNombre, 'marron') !== false) {
+            return 'imgnuevas/pantalonesCargoMarrones.png';
+        }
+        if (strpos($claveNombre, 'blanco') !== false || strpos($claveNombre, 'blanca') !== false) {
+            return 'imgnuevas/pantalonNegroBlanco.png';
+        }
+        if (strpos($claveNombre, 'verde') !== false || strpos($claveNombre, 'oliva') !== false) {
+            return 'imgnuevas/pantalonVerdeCargo.png';
+        }
+        if (strpos($claveNombre, 'negro') !== false || strpos($claveNombre, 'negra') !== false) {
+            return 'imgnuevas/pantalonNegroCargo.png';
+        }
     }
 
     return 'imgnuevas/LogoVeridi.png';

@@ -149,12 +149,11 @@ function ProductDetailPage() {
   };
 
   const handleCreateOutfit = () => {
-    const payload = {
-      baseProductId: Number(producto.id_producto),
-      message: 'Quiero un outfit con esta prenda.'
-    };
-
-    window.dispatchEvent(new CustomEvent('veridi:open-ai-outfit', { detail: payload }));
+    const params = new URLSearchParams();
+    params.set('ai', 'open');
+    params.set('base_product_id', String(Number(producto.id_producto)));
+    params.set('message', 'Quiero un outfit con esta prenda.');
+    navigate(`/tienda?${params.toString()}`);
   };
 
   return (
