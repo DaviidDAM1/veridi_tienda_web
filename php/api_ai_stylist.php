@@ -1413,22 +1413,76 @@ try {
 	}
 
 	$apiKey = getOpenAiApiKey();
+	$openAiRequired = true;
 	$llmUsed = false;
 	$openAiConfigured = $apiKey !== '';
 	$curlAvailable = function_exists('curl_init');
 	$scoredPool = stripInternalProductFields($scored);
 	$candidatePool = array_values(array_slice($scoredPool, 0, 30));
+	$openAiAttempts = 0;
+	$openAiLastFailure = '';
+
+	if ($openAiRequired && !$openAiConfigured) {
+		http_response_code(503);
+		echo json_encode([
+			'ok' => false,
+			'message' => 'OpenAI no esta configurado en el servidor. La recomendacion IA no esta disponible.',
+			'meta' => [
+				'openai_required' => true,
+				'openai_status' => 'openai_no_config'
+			]
+		], JSON_UNESCAPED_UNICODE);
+		exit;
+	}
+
+	if ($openAiRequired && !$curlAvailable) {
+		http_response_code(503);
+		echo json_encode([
+			'ok' => false,
+			'message' => 'El servidor no tiene cURL habilitado, por lo que OpenAI no puede usarse.',
+			'meta' => [
+				'openai_required' => true,
+				'openai_status' => 'openai_no_curl'
+			]
+		], JSON_UNESCAPED_UNICODE);
+		exit;
+	}
 
 	if ($apiKey !== '') {
-		$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool);
-		if (is_array($aiRaw)) {
-			$aiClean = sanitizeOpenAiStylistResult($aiRaw, $candidatePool, $preferredStyle);
-			if (is_array($aiClean)) {
-				$reply = $aiClean['reply_text'];
-				$recommended = $aiClean['recommended_products'];
-				$outfit = $aiClean['outfit'];
-				$llmUsed = true;
+		for ($try = 1; $try <= 3; $try++) {
+			$openAiAttempts = $try;
+			$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool);
+			if (!is_array($aiRaw)) {
+				$openAiLastFailure = 'request_or_http';
+				continue;
 			}
+
+			$aiClean = sanitizeOpenAiStylistResult($aiRaw, $candidatePool, $preferredStyle);
+			if (!is_array($aiClean)) {
+				$openAiLastFailure = 'invalid_or_unsanitizable_payload';
+				continue;
+			}
+
+			$reply = $aiClean['reply_text'];
+			$recommended = $aiClean['recommended_products'];
+			$outfit = $aiClean['outfit'];
+			$llmUsed = true;
+			break;
+		}
+
+		if ($openAiRequired && !$llmUsed) {
+			http_response_code(502);
+			echo json_encode([
+				'ok' => false,
+				'message' => 'OpenAI no respondio correctamente tras varios intentos. Vuelve a intentarlo en unos segundos.',
+				'meta' => [
+					'openai_required' => true,
+					'openai_status' => 'openai_failed_hard',
+					'openai_attempts' => $openAiAttempts,
+					'openai_last_failure' => $openAiLastFailure
+				]
+			], JSON_UNESCAPED_UNICODE);
+			exit;
 		}
 	}
 
@@ -1501,6 +1555,8 @@ try {
 		'outfit_reasons' => $outfitReasons,
 		'product_reasons' => $productReasons,
 		'meta' => [
+			'openai_required' => $openAiRequired,
+			'openai_attempts' => $openAiAttempts,
 			'mvp_mode' => !$llmUsed,
 			'llm_used' => $llmUsed,
 			'openai_status' => $openAiStatus,
