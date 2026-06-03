@@ -136,6 +136,25 @@ function TiendaPage() {
     const currentRequestId = requestSeqRef.current + 1;
     requestSeqRef.current = currentRequestId;
 
+    const requestCatalog = async (params) => {
+      try {
+        return await api.get('/php/api_tienda.php', { params, signal: controller.signal });
+      } catch (primaryError) {
+        const status = Number(primaryError?.response?.status || 0);
+        const isTransient = !primaryError?.response || status >= 500 || status === 404 || status === 429;
+
+        if (controller.signal.aborted || !isTransient) {
+          throw primaryError;
+        }
+
+        // Fallback path when Vercel rewrite is unstable: hit backend directly.
+        return api.get('https://davidvaldes.masterendaw.es/php/api_tienda.php', {
+          params,
+          signal: controller.signal
+        });
+      }
+    };
+
     const fetchProductos = async () => {
       setLoading(true);
       try {
@@ -153,7 +172,7 @@ function TiendaPage() {
         if (query.color.length) params.color = query.color;
         if (query.estilo.length) params.estilo = query.estilo;
 
-        const response = await api.get('/php/api_tienda.php', { params, signal: controller.signal });
+        const response = await requestCatalog(params);
         const data = response.data;
 
         if (currentRequestId !== requestSeqRef.current) {
