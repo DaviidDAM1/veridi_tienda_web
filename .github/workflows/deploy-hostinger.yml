@@ -4,17 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '.github/workflows/deploy-hostinger.yml'
-      - 'php/**'
-      - 'config/**'
-      - 'css/**'
-      - 'img/**'
-      - 'imgnuevas/**'
-      - 'includes/**'
-      - 'bd/**'
-      - 'index.php'
-      - 'vercel.json'
   workflow_dispatch:
 
 jobs:
