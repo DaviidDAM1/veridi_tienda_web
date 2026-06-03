@@ -32,6 +32,7 @@ function AdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [ratingDeletedModalOpen, setRatingDeletedModalOpen] = useState(false);
   const [requiresLogin, setRequiresLogin] = useState(false);
   const [requiresAdmin, setRequiresAdmin] = useState(false);
 
@@ -137,7 +138,6 @@ function AdminPage() {
       setProductos(next.productos || []);
       setUsuarios(next.usuarios || []);
       setValoraciones(next.valoraciones || []);
-      setValoraciones(next.valoraciones || []);
       setCreateForm(initialCreate);
       setCreateImageFile(null);
     } catch (err) {
@@ -147,7 +147,8 @@ function AdminPage() {
     }
   };
 
-  const submitAction = async (payload, clearMode = '') => {
+  const submitAction = async (payload, clearMode = '', options = {}) => {
+    const { silentSuccess = false } = options;
     setSubmitting(true);
     setError('');
     setSuccess('');
@@ -157,25 +158,42 @@ function AdminPage() {
 
       if (!data?.ok) {
         setError(data?.message || 'No se pudo procesar la acción.');
-        return;
+        return { ok: false, data };
       }
 
-      setSuccess(data.message || 'Acción ejecutada correctamente.');
+      if (!silentSuccess) {
+        setSuccess(data.message || 'Acción ejecutada correctamente.');
+      }
 
       const next = data.data || {};
       setCategorias(next.categorias || []);
       setTallas(next.tallas || []);
       setProductos(next.productos || []);
       setUsuarios(next.usuarios || []);
+      setValoraciones(next.valoraciones || []);
 
       if (clearMode === 'create') setCreateForm(initialCreate);
       if (clearMode === 'edit') setEditForm(initialEdit);
       if (clearMode === 'delete') setDeleteForm(initialDelete);
       if (clearMode === 'stock') setStockForm((prev) => ({ ...initialStock, id_talla: prev.id_talla || '' }));
+      return { ok: true, data };
     } catch (err) {
       setError('No se pudo procesar la acción.');
+      return { ok: false, data: null };
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDeleteRating = async (idValoracion) => {
+    const result = await submitAction(
+      { action: 'delete_rating', id_valoracion: idValoracion },
+      '',
+      { silentSuccess: true }
+    );
+
+    if (result?.ok) {
+      setRatingDeletedModalOpen(true);
     }
   };
 
@@ -421,7 +439,7 @@ function AdminPage() {
                   <td style={{ padding: 10 }}>
                     <button
                       type="button"
-                      onClick={() => submitAction({ action: 'delete_rating', id_valoracion: valoracion.id_valoracion })}
+                      onClick={() => handleDeleteRating(valoracion.id_valoracion)}
                       style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d32f2f', background: 'rgba(211, 47, 47, 0.1)', color: '#d32f2f', cursor: 'pointer' }}
                       disabled={submitting}
                     >
@@ -434,6 +452,52 @@ function AdminPage() {
           </table>
         </div>
       </section>
+
+      {ratingDeletedModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 999
+          }}
+        >
+          <div
+            style={{
+              width: 'min(92vw, 420px)',
+              background: 'var(--veridi-surface)',
+              border: '1px solid var(--veridi-border)',
+              borderRadius: 10,
+              padding: 24,
+              textAlign: 'center',
+              boxShadow: '0 14px 34px rgba(0, 0, 0, 0.32)'
+            }}
+          >
+            <h3 style={{ margin: '0 0 10px 0', color: 'var(--veridi-text)' }}>Valoración eliminada</h3>
+            <p style={{ margin: '0 0 18px 0', color: 'var(--veridi-text-secondary)' }}>
+              La valoración se ha eliminado correctamente.
+            </p>
+            <button
+              type="button"
+              onClick={() => setRatingDeletedModalOpen(false)}
+              style={{
+                background: 'var(--veridi-gold)',
+                color: 'var(--veridi-black)',
+                border: 'none',
+                borderRadius: 8,
+                padding: '10px 18px',
+                fontWeight: 700,
+                cursor: 'pointer'
+              }}
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
