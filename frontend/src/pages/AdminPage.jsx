@@ -227,6 +227,24 @@ function AdminPage() {
     });
   };
 
+  const askDeleteUserConfirmation = (idUsuario, nombreUsuario) => {
+    const id = Number(idUsuario || 0);
+    if (id <= 0) {
+      setError('ID de usuario inválido.');
+      return;
+    }
+
+    const nombre = String(nombreUsuario || '').trim();
+    const sufijoNombre = nombre !== '' ? ` (${nombre})` : '';
+
+    setConfirmDeleteModal({
+      open: true,
+      type: 'user',
+      payload: { id_usuario: id },
+      message: `¿Seguro que quieres eliminar este usuario${sufijoNombre}?`
+    });
+  };
+
   const handleConfirmDelete = async () => {
     const modal = confirmDeleteModal;
     setConfirmDeleteModal({ open: false, type: '', payload: null, message: '' });
@@ -241,6 +259,11 @@ function AdminPage() {
       if (idValoracion > 0) {
         await handleDeleteRating(idValoracion);
       }
+      return;
+    }
+
+    if (modal.type === 'user') {
+      await submitAction({ action: 'delete_user', ...(modal.payload || {}) });
     }
   };
 
@@ -436,6 +459,7 @@ function AdminPage() {
                 <th style={{ padding: 10, textAlign: 'left' }}>Email</th>
                 <th style={{ padding: 10, textAlign: 'left' }}>Rol</th>
                 <th style={{ padding: 10, textAlign: 'left' }}>Password (hash)</th>
+                <th style={{ padding: 10, textAlign: 'left' }}>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -446,6 +470,20 @@ function AdminPage() {
                   <td style={{ padding: 10 }}>{usuario.email}</td>
                   <td style={{ padding: 10 }}>{usuario.rol}</td>
                   <td style={{ padding: 10, fontFamily: 'Consolas, monospace', fontSize: 12, wordBreak: 'break-all' }}>{usuario.password}</td>
+                  <td style={{ padding: 10 }}>
+                    {String(usuario.rol) === 'admin' ? (
+                      <span style={{ color: 'var(--veridi-text-secondary)', fontSize: 13 }}>Protegido</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => askDeleteUserConfirmation(usuario.id_usuario, usuario.nombre)}
+                        style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d32f2f', background: 'rgba(211, 47, 47, 0.1)', color: '#d32f2f', cursor: 'pointer' }}
+                        disabled={submitting}
+                      >
+                        Eliminar usuario
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

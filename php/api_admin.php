@@ -434,6 +434,49 @@ try {
             break;
         }
 
+        case 'delete_user': {
+            $idUsuarioEliminar = (int)($payload['id_usuario'] ?? 0);
+            $idUsuarioActual = (int)($_SESSION['usuario_id'] ?? 0);
+
+            if ($idUsuarioEliminar <= 0) {
+                throw new InvalidArgumentException('ID de usuario inválido.');
+            }
+
+            if ($idUsuarioEliminar === $idUsuarioActual) {
+                throw new InvalidArgumentException('No puedes eliminar tu propio usuario administrador.');
+            }
+
+            $stmtUsuario = $conexion->prepare("SELECT rol, foto_perfil FROM usuarios WHERE id_usuario = :id_usuario LIMIT 1");
+            $stmtUsuario->bindParam(':id_usuario', $idUsuarioEliminar, PDO::PARAM_INT);
+            $stmtUsuario->execute();
+            $usuario = $stmtUsuario->fetch(PDO::FETCH_ASSOC);
+
+            if (!$usuario) {
+                throw new InvalidArgumentException('No se encontró el usuario a eliminar.');
+            }
+
+            if ((string)($usuario['rol'] ?? 'cliente') === 'admin') {
+                throw new InvalidArgumentException('No se permite eliminar cuentas con rol admin.');
+            }
+
+            $fotoPerfil = trim((string)($usuario['foto_perfil'] ?? ''));
+
+            $stmt = $conexion->prepare("DELETE FROM usuarios WHERE id_usuario = :id_usuario");
+            $stmt->bindParam(':id_usuario', $idUsuarioEliminar, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() <= 0) {
+                throw new InvalidArgumentException('No se pudo eliminar el usuario.');
+            }
+
+            if ($fotoPerfil !== '' && str_starts_with($fotoPerfil, 'img/perfiles/')) {
+                eliminarArchivoRelativo($fotoPerfil);
+            }
+
+            $message = 'Usuario eliminado correctamente.';
+            break;
+        }
+
         default:
             throw new InvalidArgumentException('Acción de administrador no válida.');
     }
