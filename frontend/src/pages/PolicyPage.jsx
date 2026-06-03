@@ -2,14 +2,15 @@ import { Link } from 'react-router-dom';
 
 function PolicyPage() {
   return (
-    <main>
-      <section className="pagina-estatica">
-        <div className="hero-section">
+    <main className="policy-page">
+      <section className="policy-container">
+        <div className="policy-hero">
+          <span className="policy-kicker">Legal</span>
           <h1>Política de Privacidad</h1>
-          <p className="hero-subtitle">Tu privacidad es importante para nosotros</p>
+          <p className="policy-subtitle">Tu privacidad es importante para nosotros</p>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>1. Introducción</h2>
           <p>
             En Veridi ("la Empresa", "nosotros" o "nuestro"), nos comprometemos a proteger tu privacidad
@@ -24,12 +25,12 @@ function PolicyPage() {
           </p>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>2. Información que Recopilamos</h2>
           <p>Recopilamos información de ti de varias formas:</p>
 
           <h4>Información Proporcionada Directamente:</h4>
-          <ul className="info-list">
+          <ul className="policy-list">
             <li><strong>Datos de Registro:</strong> Nombre, email, contraseña, número de teléfono</li>
             <li><strong>Información de Perfil:</strong> Foto de perfil, dirección de envío, historial de compras</li>
             <li><strong>Información de Contacto:</strong> Comunicaciones, consultas, comentarios o sugerencias</li>
@@ -37,7 +38,7 @@ function PolicyPage() {
           </ul>
 
           <h4>Información Recopilada Automáticamente:</h4>
-          <ul className="info-list">
+          <ul className="policy-list">
             <li><strong>Datos de Dispositivo:</strong> Tipo de navegador, dirección IP, sistema operativo</li>
             <li><strong>Datos de Navegación:</strong> Páginas visitadas, tiempo en el sitio, enlaces clickeados</li>
             <li><strong>Cookies:</strong> Identificadores únicos para mejorar tu experiencia</li>
@@ -45,11 +46,11 @@ function PolicyPage() {
           </ul>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>3. Cómo Utilizamos Tu Información</h2>
           <p>Utilizamos la información recopilada para diversos propósitos:</p>
 
-          <ul className="info-list">
+          <ul className="policy-list">
             <li>Procesar y completar tus compras y devoluciones</li>
             <li>Enviar información sobre pedidos, confirmaciones y actualizaciones de envío</li>
             <li>Responder a tus consultas, comentarios y solicitudes de soporte</li>
@@ -61,13 +62,13 @@ function PolicyPage() {
           </ul>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>4. Uso de Cookies</h2>
           <p>
             Utilizamos cookies (pequeños archivos almacenados en tu dispositivo) para mejorar tu experiencia
             en nuestro sitio. Las cookies nos ayudan a:
           </p>
-          <ul className="info-list">
+          <ul className="policy-list">
             <li>Recordar tus preferencias y configuración</li>
             <li>Entender cómo navegas por nuestro sitio</li>
             <li>Mejorar la funcionalidad y seguridad del sitio</li>
@@ -79,13 +80,13 @@ function PolicyPage() {
           </p>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>5. Seguridad y Protección de Datos</h2>
           <p>
             La seguridad de tu información es nuestra prioridad. Implementamos medidas técnicas, administrativas
             y físicas para proteger tus datos personales:
           </p>
-          <ul className="info-list">
+          <ul className="policy-list">
             <li>Encriptación SSL/TLS para todas las transacciones</li>
             <li>Contraseñas hasheadas y almacenamiento seguro</li>
             <li>Acceso restringido a datos personales</li>
@@ -98,13 +99,13 @@ function PolicyPage() {
           </p>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>6. Compartir Tu Información</h2>
           <p>
             No vendemos, alquilamos ni compartimos tu información personal con terceros para fines de marketing
             sin tu consentimiento previo. Sin embargo, podemos compartir información en los siguientes casos:
           </p>
-          <ul className="info-list">
+          <ul className="policy-list">
             <li><strong>Proveedores de Servicios:</strong> Con compañías que nos ayudan a procesar pagos, envíos y comunicaciones</li>
             <li><strong>Requisitos Legales:</strong> Cuando lo exija la ley o para proteger nuestros derechos legales</li>
             <li><strong>Transferencias Empresariales:</strong> En caso de fusión o adquisición de la empresa</li>
@@ -112,12 +113,12 @@ function PolicyPage() {
           </ul>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>7. Tus Derechos y Opciones</h2>
           <p>
             Tienes derechos específicos respecto a tu información personal:
           </p>
-          <ul className="info-list">
+          <ul className="policy-list">
             <li><strong>Derecho de Acceso:</strong> Puedes solicitar una copia de los datos que tenemos sobre ti</li>
             <li><strong>Derecho a la Rectificación:</strong> Puedes corregir información inexacta</li>
             <li><strong>Derecho a la Supresión:</strong> Puedes solicitar la eliminación de tus datos (con limitaciones legales)</li>
@@ -130,13 +131,13 @@ function PolicyPage() {
           </p>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>8. Retención de Datos</h2>
           <p>
             Retenemos tu información personal durante el tiempo necesario para cumplir con los propósitos
             descritos en esta política. Específicamente:
           </p>
-          <ul className="info-list">
+          <ul className="policy-list">
             <li>Los datos de cuenta se mantienen mientras tu cuenta esté activa</li>
             <li>Los datos de transacción se retienen durante 7 años para fines legales y contables</li>
             <li>Los datos de comunicación se eliminan después de 2 años</li>
@@ -148,7 +149,7 @@ function PolicyPage() {
           </p>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>9. Enlaces de Terceros</h2>
           <p>
             Nuestro sitio web puede contener enlaces a sitios de terceros. No somos responsables de las
@@ -157,7 +158,7 @@ function PolicyPage() {
           </p>
         </div>
 
-        <div className="content-section">
+        <div className="policy-card">
           <h2>10. Cambios a Esta Política</h2>
           <p>
             Podemos actualizar esta Política de Privacidad periódicamente para reflejar cambios en nuestras prácticas,
@@ -169,13 +170,13 @@ function PolicyPage() {
           </p>
         </div>
 
-        <div className="content-section contact-cta">
+        <div className="policy-card policy-contact-card">
           <h2>11. Contacto</h2>
           <p>
             Si tienes preguntas sobre esta Política de Privacidad, tus derechos, o deseas ejercer alguna
             opción respecto a tu información, no dudes en contactarnos:
           </p>
-          <div className="contact-info">
+          <div className="policy-contact-info">
             <p><strong>Email:</strong> <a href="mailto:info@veridi.com">info@veridi.com</a></p>
             <p><strong>Teléfono:</strong> Disponible en nuestra <Link to="/contacto">página de contacto</Link></p>
           </div>
@@ -184,7 +185,7 @@ function PolicyPage() {
           </p>
         </div>
 
-        <div className="last-update">
+        <div className="policy-last-update">
           <p><em>Última actualización: Febrero 20, 2026</em></p>
         </div>
       </section>
