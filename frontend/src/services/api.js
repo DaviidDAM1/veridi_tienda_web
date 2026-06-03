@@ -2,10 +2,14 @@ import axios from 'axios';
 
 // Allow an explicit empty string in VITE_BACKEND_BASE_URL to use relative paths
 const rawEnvBackend = import.meta.env.VITE_BACKEND_BASE_URL;
-const BACKEND_BASE_URL = (rawEnvBackend === undefined
+const normalizedEnvBackend = (rawEnvBackend === undefined
   ? (import.meta.env.DEV ? 'http://localhost/veridi_tienda_web' : '')
   : String(rawEnvBackend)
 ).replace(/\/$/, '');
+
+// In production, keep API calls same-origin so session cookies are always consistent.
+const forceSameOriginApi = !import.meta.env.DEV && String(import.meta.env.VITE_FORCE_SAME_ORIGIN_API || 'true') !== 'false';
+const BACKEND_BASE_URL = forceSameOriginApi ? '' : normalizedEnvBackend;
 
 export function buildBackendAssetUrl(path) {
   const value = String(path || '').trim();

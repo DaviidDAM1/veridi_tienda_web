@@ -12,6 +12,8 @@ if ($origin !== '' && preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^h
     header('Access-Control-Allow-Credentials: true');
 }
 header('Vary: Origin');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 header('Content-Type: application/json; charset=utf-8');
