@@ -21,15 +21,16 @@ jobs:
         timeout-minutes: 10
         with:
           server: ${{ secrets.HOSTINGER_FTP_SERVER }}
-          protocol: ftps-legacy
+          protocol: ftp
           port: 21
           username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
           password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
           server-dir: /public_html/
           local-dir: ./
           timeout: 600000
-          log-level: verbose
+          log-level: standard
           dangerous-clean-slate: false
+          security: loose
           exclude: |
             **/.git*
             **/.github/**
