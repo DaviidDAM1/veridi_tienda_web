@@ -47,8 +47,114 @@ if (!isset($_SESSION['carrito']) || !is_array($_SESSION['carrito'])) {
     $_SESSION['carrito'] = [];
 }
 
+function getOrCreateCartId(PDO $conexion, int $idUsuario): int
+{
+    $stmt = $conexion->prepare("SELECT id_carrito FROM carrito WHERE id_usuario = :id_usuario ORDER BY id_carrito DESC LIMIT 1");
+    $stmt->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $stmt->execute();
+    $idCarrito = (int)($stmt->fetchColumn() ?: 0);
+    if ($idCarrito > 0) {
+        return $idCarrito;
+    }
+
+    $insert = $conexion->prepare("INSERT INTO carrito (id_usuario) VALUES (:id_usuario)");
+    $insert->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $insert->execute();
+    return (int)$conexion->lastInsertId();
+}
+
+function loadCartFromDb(PDO $conexion, int $idUsuario): array
+{
+    $idCarrito = getOrCreateCartId($conexion, $idUsuario);
+    $stmt = $conexion->prepare(
+        "SELECT cd.id_producto, cd.id_talla, cd.cantidad, p.nombre, p.precio
+         FROM carrito_detalle cd
+         INNER JOIN productos p ON p.id_producto = cd.id_producto
+         WHERE cd.id_carrito = :id_carrito
+           AND (p.oculto = 0 OR p.oculto IS NULL)"
+    );
+    $stmt->bindValue(':id_carrito', $idCarrito, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $items = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $idProducto = (int)($row['id_producto'] ?? 0);
+        $idTalla = (int)($row['id_talla'] ?? 0);
+        if ($idProducto <= 0 || $idTalla <= 0) {
+            continue;
+        }
+        $key = $idProducto . '_' . $idTalla;
+        $nombre = (string)($row['nombre'] ?? 'Producto');
+        $items[$key] = [
+            'id_producto' => $idProducto,
+            'id_talla' => $idTalla,
+            'nombre' => $nombre,
+            'precio' => (float)($row['precio'] ?? 0),
+            'imagen' => obtenerImagenProducto($idProducto, $nombre),
+            'cantidad' => max(1, (int)($row['cantidad'] ?? 1))
+        ];
+    }
+
+    return $items;
+}
+
+function saveCartToDb(PDO $conexion, int $idUsuario, array $carrito): void
+{
+    $idCarrito = getOrCreateCartId($conexion, $idUsuario);
+
+    $delete = $conexion->prepare("DELETE FROM carrito_detalle WHERE id_carrito = :id_carrito");
+    $delete->bindValue(':id_carrito', $idCarrito, PDO::PARAM_INT);
+    $delete->execute();
+
+    if (empty($carrito)) {
+        return;
+    }
+
+    $insert = $conexion->prepare(
+        "INSERT INTO carrito_detalle (id_carrito, id_producto, id_talla, cantidad)
+         VALUES (:id_carrito, :id_producto, :id_talla, :cantidad)"
+    );
+
+    foreach ($carrito as $item) {
+        $idProducto = (int)($item['id_producto'] ?? 0);
+        $idTalla = (int)($item['id_talla'] ?? 0);
+        $cantidad = max(1, (int)($item['cantidad'] ?? 1));
+        if ($idProducto <= 0 || $idTalla <= 0) {
+            continue;
+        }
+        $insert->bindValue(':id_carrito', $idCarrito, PDO::PARAM_INT);
+        $insert->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+        $insert->bindValue(':id_talla', $idTalla, PDO::PARAM_INT);
+        $insert->bindValue(':cantidad', $cantidad, PDO::PARAM_INT);
+        $insert->execute();
+    }
+}
+
+function syncSessionCartFromDb(PDO $conexion): void
+{
+    $idUsuario = (int)($_SESSION['usuario_id'] ?? 0);
+    if ($idUsuario <= 0) {
+        return;
+    }
+    $_SESSION['carrito'] = loadCartFromDb($conexion, $idUsuario);
+}
+
+function persistSessionCartToDb(PDO $conexion): void
+{
+    $idUsuario = (int)($_SESSION['usuario_id'] ?? 0);
+    if ($idUsuario <= 0) {
+        return;
+    }
+    $carrito = $_SESSION['carrito'] ?? [];
+    if (!is_array($carrito)) {
+        $carrito = [];
+    }
+    saveCartToDb($conexion, $idUsuario, $carrito);
+}
+
 function outputCart(PDO $conexion): void
 {
+    syncSessionCartFromDb($conexion);
     $carrito = $_SESSION['carrito'] ?? [];
     $tallasNombres = [];
     $tallasPorProducto = [];
@@ -213,6 +319,7 @@ switch ($action) {
         if ((int)$_SESSION['carrito'][$itemKey]['cantidad'] > $stockDisponible) {
             $_SESSION['carrito'][$itemKey]['cantidad'] = $stockDisponible;
         }
+        persistSessionCartToDb($conexion);
         break;
 
     case 'update_quantity':
@@ -232,6 +339,7 @@ switch ($action) {
                 unset($_SESSION['carrito'][$itemKey]);
             }
         }
+        persistSessionCartToDb($conexion);
         break;
 
     case 'update_size':
@@ -304,16 +412,19 @@ switch ($action) {
         if ((int)$_SESSION['carrito'][$itemKey]['cantidad'] <= 0) {
             unset($_SESSION['carrito'][$itemKey]);
         }
+        persistSessionCartToDb($conexion);
         break;
 
     case 'remove_item':
         if ($idProducto > 0 && $idTalla > 0 && isset($_SESSION['carrito'][$itemKey])) {
             unset($_SESSION['carrito'][$itemKey]);
         }
+        persistSessionCartToDb($conexion);
         break;
 
     case 'clear_cart':
         $_SESSION['carrito'] = [];
+        persistSessionCartToDb($conexion);
         break;
 
     case 'add_outfit':
@@ -397,6 +508,7 @@ switch ($action) {
                 $_SESSION['carrito'][$itemKeyOutfit]['cantidad'] = $stockDisponible;
             }
         }
+        persistSessionCartToDb($conexion);
         break;
 
     default:

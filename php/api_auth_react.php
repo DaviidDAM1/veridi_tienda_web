@@ -44,6 +44,100 @@ if (!is_array($payload)) {
     $payload = [];
 }
 
+function getOrCreateCartId(PDO $conexion, int $idUsuario): int
+{
+    $stmt = $conexion->prepare("SELECT id_carrito FROM carrito WHERE id_usuario = :id_usuario ORDER BY id_carrito DESC LIMIT 1");
+    $stmt->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $stmt->execute();
+    $idCarrito = (int)($stmt->fetchColumn() ?: 0);
+    if ($idCarrito > 0) {
+        return $idCarrito;
+    }
+
+    $insert = $conexion->prepare("INSERT INTO carrito (id_usuario) VALUES (:id_usuario)");
+    $insert->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $insert->execute();
+    return (int)$conexion->lastInsertId();
+}
+
+function loadCartSessionData(PDO $conexion, int $idUsuario): array
+{
+    $idCarrito = getOrCreateCartId($conexion, $idUsuario);
+    $stmt = $conexion->prepare(
+        "SELECT cd.id_producto, cd.id_talla, cd.cantidad, p.nombre, p.precio
+         FROM carrito_detalle cd
+         INNER JOIN productos p ON p.id_producto = cd.id_producto
+         WHERE cd.id_carrito = :id_carrito
+           AND (p.oculto = 0 OR p.oculto IS NULL)"
+    );
+    $stmt->bindValue(':id_carrito', $idCarrito, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $carrito = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $idProducto = (int)($row['id_producto'] ?? 0);
+        $idTalla = (int)($row['id_talla'] ?? 0);
+        if ($idProducto <= 0 || $idTalla <= 0) {
+            continue;
+        }
+        $key = $idProducto . '_' . $idTalla;
+        $carrito[$key] = [
+            'id_producto' => $idProducto,
+            'id_talla' => $idTalla,
+            'nombre' => (string)($row['nombre'] ?? 'Producto'),
+            'precio' => (float)($row['precio'] ?? 0),
+            'imagen' => '',
+            'cantidad' => max(1, (int)($row['cantidad'] ?? 1))
+        ];
+    }
+
+    return $carrito;
+}
+
+function ensureDeseosTable(PDO $conexion): void
+{
+    $conexion->exec(
+        "CREATE TABLE IF NOT EXISTS deseos_usuario (
+            id_deseo INT AUTO_INCREMENT PRIMARY KEY,
+            id_usuario INT NOT NULL,
+            id_producto INT NOT NULL,
+            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uk_deseos_usuario_producto (id_usuario, id_producto)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+}
+
+function loadDeseosSessionData(PDO $conexion, int $idUsuario): array
+{
+    ensureDeseosTable($conexion);
+
+    $stmt = $conexion->prepare(
+        "SELECT p.id_producto, p.nombre, p.precio
+         FROM deseos_usuario d
+         INNER JOIN productos p ON p.id_producto = d.id_producto
+         WHERE d.id_usuario = :id_usuario
+           AND (p.oculto = 0 OR p.oculto IS NULL)"
+    );
+    $stmt->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $stmt->execute();
+
+    $deseos = [];
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $idProducto = (int)($row['id_producto'] ?? 0);
+        if ($idProducto <= 0) {
+            continue;
+        }
+        $deseos[$idProducto] = [
+            'id_producto' => $idProducto,
+            'nombre' => (string)($row['nombre'] ?? 'Producto'),
+            'precio' => (float)($row['precio'] ?? 0),
+            'imagen' => ''
+        ];
+    }
+
+    return $deseos;
+}
+
 $action = trim((string)($payload['action'] ?? ''));
 
 if ($action === 'logout') {
@@ -135,6 +229,9 @@ if ($action === 'login') {
         if (!isset($_SESSION['deseos']) || !is_array($_SESSION['deseos'])) {
             $_SESSION['deseos'] = [];
         }
+
+        $_SESSION['carrito'] = loadCartSessionData($conexion, (int)$usuario['id_usuario']);
+        $_SESSION['deseos'] = loadDeseosSessionData($conexion, (int)$usuario['id_usuario']);
 
         echo json_encode(['ok' => true, 'message' => 'Sesión iniciada correctamente.'], JSON_UNESCAPED_UNICODE);
         exit;

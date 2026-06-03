@@ -1,5 +1,6 @@
 <?php
 require_once "../config/conexion.php";
+require_once "../config/imagenes.php";
 
 if (PHP_SESSION_NONE === session_status()) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -35,6 +36,59 @@ if (!isset($_SESSION['deseos']) || !is_array($_SESSION['deseos'])) {
     $_SESSION['deseos'] = [];
 }
 
+function ensureDeseosTable(PDO $conexion): void
+{
+    $conexion->exec(
+        "CREATE TABLE IF NOT EXISTS deseos_usuario (
+            id_deseo INT AUTO_INCREMENT PRIMARY KEY,
+            id_usuario INT NOT NULL,
+            id_producto INT NOT NULL,
+            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uk_deseos_usuario_producto (id_usuario, id_producto)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+}
+
+function loadDeseosFromDb(PDO $conexion, int $idUsuario): array
+{
+    $stmt = $conexion->prepare(
+        "SELECT p.id_producto, p.nombre, p.precio
+         FROM deseos_usuario d
+         INNER JOIN productos p ON p.id_producto = d.id_producto
+         WHERE d.id_usuario = :id_usuario
+           AND (p.oculto = 0 OR p.oculto IS NULL)
+         ORDER BY d.id_deseo DESC"
+    );
+    $stmt->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    $out = [];
+    foreach ($rows as $row) {
+        $idProducto = (int)($row['id_producto'] ?? 0);
+        if ($idProducto <= 0) {
+            continue;
+        }
+        $nombre = (string)($row['nombre'] ?? 'Producto');
+        $out[$idProducto] = [
+            'id_producto' => $idProducto,
+            'nombre' => $nombre,
+            'precio' => (float)($row['precio'] ?? 0),
+            'imagen' => obtenerImagenProducto($idProducto, $nombre)
+        ];
+    }
+
+    return $out;
+}
+
+function syncSessionDeseos(PDO $conexion, int $idUsuario): array
+{
+    ensureDeseosTable($conexion);
+    $deseos = loadDeseosFromDb($conexion, $idUsuario);
+    $_SESSION['deseos'] = $deseos;
+    return $deseos;
+}
+
 function jsonResponse(array $payload, int $status = 200): void
 {
     http_response_code($status);
@@ -56,6 +110,9 @@ function requireLogin(): void
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     requireLogin();
 
+    $idUsuario = (int)($_SESSION['usuario_id'] ?? 0);
+    $dbDeseos = $idUsuario > 0 ? syncSessionDeseos($conexion, $idUsuario) : [];
+
     $deseos = array_values(array_map(static function ($item) {
         return [
             'id_producto' => (int)($item['id_producto'] ?? 0),
@@ -63,7 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'precio' => (float)($item['precio'] ?? 0),
             'imagen' => (string)($item['imagen'] ?? '')
         ];
-    }, $_SESSION['deseos']));
+    }, $dbDeseos));
 
     jsonResponse([
         'ok' => true,
@@ -80,6 +137,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 requireLogin();
+
+$idUsuario = (int)($_SESSION['usuario_id'] ?? 0);
+if ($idUsuario <= 0) {
+    jsonResponse([
+        'ok' => false,
+        'requiresLogin' => true,
+        'message' => 'Debes iniciar sesión para acceder a tus favoritos.'
+    ], 401);
+}
+
+ensureDeseosTable($conexion);
 
 $payload = json_decode(file_get_contents('php://input'), true);
 if (!is_array($payload)) {
@@ -102,11 +170,20 @@ switch ($action) {
         $precio = (float)($payload['precio'] ?? 0);
         $imagen = trim((string)($payload['imagen'] ?? ''));
 
+        $stmtUpsert = $conexion->prepare(
+            "INSERT INTO deseos_usuario (id_usuario, id_producto)
+             VALUES (:id_usuario, :id_producto)
+             ON DUPLICATE KEY UPDATE id_producto = VALUES(id_producto)"
+        );
+        $stmtUpsert->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+        $stmtUpsert->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+        $stmtUpsert->execute();
+
         $_SESSION['deseos'][$idProducto] = [
             'id_producto' => $idProducto,
             'nombre' => $nombre,
             'precio' => $precio,
-            'imagen' => $imagen
+            'imagen' => $imagen !== '' ? $imagen : obtenerImagenProducto($idProducto, $nombre)
         ];
 
         jsonResponse([
@@ -118,6 +195,11 @@ switch ($action) {
     }
 
     case 'remove': {
+        $stmtDelete = $conexion->prepare("DELETE FROM deseos_usuario WHERE id_usuario = :id_usuario AND id_producto = :id_producto");
+        $stmtDelete->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+        $stmtDelete->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+        $stmtDelete->execute();
+
         foreach ($_SESSION['deseos'] as $key => $fav) {
             if ((int)($fav['id_producto'] ?? 0) === $idProducto) {
                 unset($_SESSION['deseos'][$key]);
@@ -154,6 +236,10 @@ switch ($action) {
     }
 
     case 'check': {
+        if (!isset($_SESSION['deseos']) || !is_array($_SESSION['deseos']) || empty($_SESSION['deseos'])) {
+            $_SESSION['deseos'] = loadDeseosFromDb($conexion, $idUsuario);
+        }
+
         $esFavorito = false;
         foreach ($_SESSION['deseos'] as $fav) {
             if ((int)($fav['id_producto'] ?? 0) === $idProducto) {

@@ -16,7 +16,6 @@ function ContactPage() {
   const [form, setForm] = useState({
     nombre: '',
     email: '',
-    contrasena: '',
     tipo: '',
     mensaje: ''
   });
@@ -69,7 +68,7 @@ function ContactPage() {
       }
 
       setSuccess(data.message || 'Mensaje enviado correctamente.');
-      setForm((prev) => ({ ...prev, contrasena: '', tipo: '', mensaje: '' }));
+      setForm((prev) => ({ ...prev, tipo: '', mensaje: '' }));
     } catch (err) {
       setError('No se pudo enviar el mensaje.');
     }
@@ -146,22 +145,6 @@ function ContactPage() {
                 ) : (
                   <input type="email" id="email" name="email" placeholder="Debes iniciar sesión" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }} />
                 )}
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="contrasena">Contraseña de tu correo <span className="required">*</span></label>
-                <input
-                  type="password"
-                  id="contrasena"
-                  name="contrasena"
-                  value={form.contrasena}
-                  onChange={(e) => handleChange('contrasena', e.target.value)}
-                  placeholder={logueado ? 'Ingresa tu contraseña' : 'Debes iniciar sesión'}
-                  disabled={!logueado}
-                  required={logueado}
-                  style={!logueado ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
-                />
-                {logueado && <small className="form-info">Mínimo 6 caracteres</small>}
               </div>
 
               <div className="form-group">

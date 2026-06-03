@@ -117,7 +117,6 @@ if (!is_array($payload)) {
 }
 
 $email = trim((string)($payload['email'] ?? ''));
-$password = (string)($payload['password'] ?? '');
 $calle = trim((string)($payload['calle'] ?? ''));
 $ciudad = trim((string)($payload['ciudad'] ?? ''));
 $codigoPostal = trim((string)($payload['codigo_postal'] ?? ''));
@@ -128,7 +127,7 @@ if (empty($_SESSION['carrito'])) {
     exit;
 }
 
-if ($email === '' || $password === '' || $calle === '' || $ciudad === '' || $codigoPostal === '' || $pais === '') {
+if ($email === '' || $calle === '' || $ciudad === '' || $codigoPostal === '' || $pais === '') {
     echo json_encode(['ok' => false, 'message' => 'Todos los campos de dirección son requeridos.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
@@ -138,13 +137,18 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-$stmt = $conexion->prepare("SELECT id_usuario, password FROM usuarios WHERE email = :email LIMIT 1");
-$stmt->bindParam(':email', $email);
+$stmt = $conexion->prepare("SELECT id_usuario, email FROM usuarios WHERE id_usuario = :id_usuario LIMIT 1");
+$stmt->bindValue(':id_usuario', (int)$_SESSION['usuario_id'], PDO::PARAM_INT);
 $stmt->execute();
 $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$usuario || !password_verify($password, $usuario['password'])) {
-    echo json_encode(['ok' => false, 'message' => 'Email o contraseña incorrectos.'], JSON_UNESCAPED_UNICODE);
+if (!$usuario) {
+    echo json_encode(['ok' => false, 'message' => 'Tu sesión ya no es válida. Inicia sesión de nuevo.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if (strcasecmp((string)$email, (string)($usuario['email'] ?? '')) !== 0) {
+    echo json_encode(['ok' => false, 'message' => 'El email debe coincidir con el de tu cuenta.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 

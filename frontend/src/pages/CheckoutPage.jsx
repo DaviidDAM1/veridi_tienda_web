@@ -13,7 +13,6 @@ function CheckoutPage() {
 
   const [form, setForm] = useState({
     email: '',
-    password: '',
     calle: '',
     ciudad: '',
     codigo_postal: '',
@@ -136,18 +135,6 @@ function CheckoutPage() {
                   onChange={(e) => handleChange('email', e.target.value)}
                   style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 6, background: 'var(--veridi-dark)', color: 'var(--veridi-text)', fontSize: 14 }}
                 />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', color: 'var(--veridi-gold)', marginBottom: 8, fontWeight: 600 }}>Contraseña:</label>
-                <input
-                  type="password"
-                  value={form.password}
-                  required
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 6, background: 'var(--veridi-dark)', color: 'var(--veridi-text)', fontSize: 14 }}
-                />
-                <small style={{ color: 'var(--veridi-text-muted)', display: 'block', marginTop: 5 }}>Se requiere tu contraseña de cuenta para confirmar la compra</small>
               </div>
 
               <div>

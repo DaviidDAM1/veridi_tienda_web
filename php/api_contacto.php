@@ -39,7 +39,7 @@ function getUsuarioActual(PDO $conexion): ?array
         return null;
     }
 
-    $stmt = $conexion->prepare("SELECT email, nombre, password FROM usuarios WHERE id_usuario = ? LIMIT 1");
+    $stmt = $conexion->prepare("SELECT email, nombre FROM usuarios WHERE id_usuario = ? LIMIT 1");
     $stmt->execute([$_SESSION['usuario_id']]);
     $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -49,8 +49,7 @@ function getUsuarioActual(PDO $conexion): ?array
 
     return [
         'email' => (string)($usuario['email'] ?? ''),
-        'nombre' => (string)($usuario['nombre'] ?? ''),
-        'password' => (string)($usuario['password'] ?? '')
+        'nombre' => (string)($usuario['nombre'] ?? '')
     ];
 }
 
@@ -96,7 +95,6 @@ $nombre = trim((string)($payload['nombre'] ?? ''));
 $email = trim((string)($payload['email'] ?? ''));
 $tipo = trim((string)($payload['tipo'] ?? ''));
 $mensaje = trim((string)($payload['mensaje'] ?? ''));
-$contrasena = trim((string)($payload['contrasena'] ?? ''));
 
 if ($email !== $usuario['email']) {
     echo json_encode([
@@ -106,7 +104,7 @@ if ($email !== $usuario['email']) {
     exit;
 }
 
-if ($email === '' || $tipo === '' || $mensaje === '' || $contrasena === '') {
+if ($email === '' || $tipo === '' || $mensaje === '') {
     echo json_encode([
         'ok' => false,
         'message' => '❌ Todos los campos son obligatorios.'
@@ -122,22 +120,6 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
-if (strlen($contrasena) < 6) {
-    echo json_encode([
-        'ok' => false,
-        'message' => '❌ La contraseña debe tener al menos 6 caracteres.'
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-if (!password_verify($contrasena, $usuario['password'])) {
-    echo json_encode([
-        'ok' => false,
-        'message' => '❌ La contraseña ingresada es incorrecta.'
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 if ($nombre === '') {
     echo json_encode([
         'ok' => false,
@@ -146,8 +128,8 @@ if ($nombre === '') {
     exit;
 }
 
-$stmt = $conexion->prepare("INSERT INTO contacto (nombre, email, asunto, mensaje, contrasena) VALUES (?, ?, ?, ?, ?)");
-$ok = $stmt->execute([$nombre, $email, $tipo, $mensaje, $contrasena]);
+$stmt = $conexion->prepare("INSERT INTO contacto (nombre, email, asunto, mensaje, contrasena) VALUES (?, ?, ?, ?, NULL)");
+$ok = $stmt->execute([$nombre, $email, $tipo, $mensaje]);
 
 if (!$ok) {
     echo json_encode([

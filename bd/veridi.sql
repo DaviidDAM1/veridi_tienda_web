@@ -138,6 +138,26 @@ CREATE TABLE carrito_detalle (
 );
 
 -- ================================
+-- TABLA DESEOS_USUARIO
+-- ================================
+CREATE TABLE deseos_usuario (
+    id_deseo INT AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT NOT NULL,
+    id_producto INT NOT NULL,
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY uk_deseos_usuario_producto (id_usuario, id_producto),
+
+    FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE,
+
+    FOREIGN KEY (id_producto)
+        REFERENCES productos(id_producto)
+        ON DELETE CASCADE
+);
+
+-- ================================
 -- TABLA PEDIDOS
 -- ================================
 CREATE TABLE pedidos (
