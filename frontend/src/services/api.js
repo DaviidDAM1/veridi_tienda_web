@@ -7,10 +7,11 @@ const normalizedEnvBackend = (rawEnvBackend === undefined
   : String(rawEnvBackend)
 ).replace(/\/$/, '');
 
-// In production, keep API calls same-origin so session cookies are always consistent.
-const forceSameOriginApi = !import.meta.env.DEV && String(import.meta.env.VITE_FORCE_SAME_ORIGIN_API || 'true') !== 'false';
-const BACKEND_BASE_URL = forceSameOriginApi ? '' : normalizedEnvBackend;
-const BACKEND_FALLBACK_URL = String(import.meta.env.VITE_BACKEND_FALLBACK_URL || 'https://davidvaldes.masterendaw.es').replace(/\/$/, '');
+const productionBackendUrl = String(import.meta.env.VITE_BACKEND_BASE_URL_PROD || 'https://davidvaldes.masterendaw.es').replace(/\/$/, '');
+
+// In production, always talk to the same backend origin so the session cookie is not split
+// between the Vercel proxy and Hostinger direct requests.
+const BACKEND_BASE_URL = import.meta.env.DEV ? normalizedEnvBackend : productionBackendUrl;
 
 export function buildBackendAssetUrl(path) {
   const value = String(path || '').trim();
@@ -36,30 +37,10 @@ api.interceptors.response.use(
     const config = error?.config || {};
     const method = String(config.method || '').toLowerCase();
     const status = error?.response?.status;
-    const url = String(config.url || '');
     const isTimeout = String(error?.code || '') === 'ECONNABORTED';
     const isNetworkError = !error?.response;
     const isRetryableStatus = Number(status) >= 500;
-    const isProxyLikelyFailure = Number(status) === 404 || Number(status) === 429;
     const shouldRetry = method === 'get' && (isTimeout || isNetworkError || isRetryableStatus);
-
-    const isPhpApiRequest = /^\/?php\//i.test(url);
-    const isAbsolute = /^https?:\/\//i.test(url);
-    const alreadyUsingFallback = String(config.baseURL || '').startsWith(BACKEND_FALLBACK_URL) || url.startsWith(BACKEND_FALLBACK_URL);
-
-    if (
-      method === 'get'
-      && isPhpApiRequest
-      && !isAbsolute
-      && !alreadyUsingFallback
-      && !config.__directFallbackTried
-      && (isNetworkError || isRetryableStatus || isProxyLikelyFailure)
-    ) {
-      config.__directFallbackTried = true;
-      config.baseURL = BACKEND_FALLBACK_URL;
-      config.url = url.startsWith('/') ? url : `/${url}`;
-      return api(config);
-    }
 
     if (!shouldRetry) {
       return Promise.reject(error);
