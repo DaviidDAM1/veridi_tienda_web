@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api, { buildBackendAssetUrl } from '../services/api';
 import { useIsMobile } from '../utils/responsive';
 
@@ -48,6 +48,7 @@ function AiStylistChat() {
   const [presupuesto, setPresupuesto] = useState('');
   const [loading, setLoading] = useState(false);
   const [addingOutfit, setAddingOutfit] = useState(false);
+  const [addingProductId, setAddingProductId] = useState(0);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [result, setResult] = useState(null);
@@ -158,6 +159,41 @@ function AiStylistChat() {
       setError('No se pudo agregar el outfit al carrito.');
     } finally {
       setAddingOutfit(false);
+    }
+  };
+
+  const handleAddProductToCart = async (product) => {
+    const productId = Number(product?.id_producto || 0);
+    if (productId <= 0) {
+      setError('Producto no valido para agregar al carrito.');
+      return;
+    }
+
+    setAddingProductId(productId);
+    setError('');
+    setNotice('');
+
+    try {
+      const response = await api.post('/php/api_carrito.php', {
+        action: 'add_outfit',
+        product_ids: [productId]
+      });
+
+      const data = response?.data;
+      if (!data?.ok) {
+        if (data?.requiresLogin) {
+          setError('Inicia sesion para agregar productos al carrito.');
+          return;
+        }
+        setError(data?.message || 'No se pudo agregar el producto al carrito.');
+        return;
+      }
+
+      setNotice(`${product.nombre || 'Producto'} agregado al carrito.`);
+    } catch (e) {
+      setError('No se pudo agregar el producto al carrito.');
+    } finally {
+      setAddingProductId(0);
     }
   };
 
@@ -428,12 +464,14 @@ function AiStylistChat() {
                   <div>
                     <h5>{product.nombre}</h5>
                     <p>{Number(product.precio || 0).toFixed(2)} EUR</p>
-                    {result?.product_reasons?.[String(product.id_producto)]?.summary && (
-                      <p className="ai-stylist-product-why">
-                        {result.product_reasons[String(product.id_producto)].summary}
-                      </p>
-                    )}
-                    <Link to={`/producto/${product.id_producto}`}>Ver producto</Link>
+                    <button
+                      type="button"
+                      className="ai-stylist-product-add-btn"
+                      onClick={() => handleAddProductToCart(product)}
+                      disabled={addingProductId === Number(product.id_producto)}
+                    >
+                      {addingProductId === Number(product.id_producto) ? 'Agregando...' : 'Agregar al carrito'}
+                    </button>
                   </div>
                 </article>
               ))}

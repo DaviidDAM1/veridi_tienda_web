@@ -737,17 +737,20 @@ header {
     font-size: 13px;
 }
 
-.ai-stylist-product-why {
-    margin: 0 0 7px;
-    font-size: 12px;
-    font-weight: 500;
-    color: #475569;
-    line-height: 1.35;
-}
-
-.ai-stylist-product-card a {
+.ai-stylist-product-add-btn {
+    border: none;
+    border-radius: 8px;
+    padding: 8px 10px;
     font-size: 13px;
     font-weight: 700;
+    background: linear-gradient(135deg, #0f766e 0%, #0ea5a4 100%);
+    color: #fff;
+    cursor: pointer;
+}
+
+.ai-stylist-product-add-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 @media (max-width: 840px) {

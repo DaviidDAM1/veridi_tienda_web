@@ -197,16 +197,19 @@ try {
         $stmtDetalle->execute();
     }
 
-    // Limpiar carrito en DB
-    $idCarrito = $_SESSION['carrito_id'] ?? null;
-    if ($idCarrito) {
-        $stmtDelDetalle = $conexion->prepare("DELETE FROM carrito_detalle WHERE id_carrito = :id_carrito");
-        $stmtDelDetalle->bindParam(':id_carrito', $idCarrito, PDO::PARAM_INT);
-        $stmtDelDetalle->execute();
-    }
+    // Limpiar carrito en DB para todos los carritos del usuario (evita depender de carrito_id en sesión).
+    $stmtDelDetalle = $conexion->prepare(
+        "DELETE cd
+         FROM carrito_detalle cd
+         INNER JOIN carrito c ON c.id_carrito = cd.id_carrito
+         WHERE c.id_usuario = :id_usuario"
+    );
+    $stmtDelDetalle->bindParam(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $stmtDelDetalle->execute();
 
     $conexion->commit();
-    unset($_SESSION['carrito']);
+    $_SESSION['carrito'] = [];
+    unset($_SESSION['carrito_id']);
 
     $reactBase = rtrim((string)(getenv('REACT_APP_URL') ?: 'http://localhost/veridi_tienda_web/frontend/dist'), '/');
 
