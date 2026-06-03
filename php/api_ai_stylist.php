@@ -2,6 +2,17 @@
 require_once __DIR__ . "/../config/conexion.php";
 require_once __DIR__ . "/../config/imagenes.php";
 
+if (PHP_SESSION_NONE === session_status()) {
+	$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+	session_set_cookie_params([
+		'lifetime' => 0,
+		'path' => '/',
+		'secure' => $isHttps,
+		'httponly' => true,
+		'samesite' => $isHttps ? 'None' : 'Lax'
+	]);
+}
+
 if (session_status() === PHP_SESSION_NONE) {
 	session_start();
 }
