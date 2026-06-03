@@ -68,6 +68,89 @@ if (!isset($_SESSION['usuario_id'])) {
 $idUsuario = (int)$_SESSION['usuario_id'];
 
 try {
+    $stmtCart = $conexion->prepare(
+        "SELECT cd.id_producto, cd.id_talla, cd.cantidad, p.nombre, p.precio
+         FROM carrito c
+         INNER JOIN carrito_detalle cd ON cd.id_carrito = c.id_carrito
+         INNER JOIN productos p ON p.id_producto = cd.id_producto
+         WHERE c.id_usuario = :id_usuario
+           AND (p.oculto = 0 OR p.oculto IS NULL)
+         ORDER BY cd.id_detalle DESC"
+    );
+    $stmtCart->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $stmtCart->execute();
+    $carritoDb = [];
+    while ($row = $stmtCart->fetch(PDO::FETCH_ASSOC)) {
+        $idProducto = (int)($row['id_producto'] ?? 0);
+        $idTalla = (int)($row['id_talla'] ?? 0);
+        if ($idProducto <= 0 || $idTalla <= 0) {
+            continue;
+        }
+        $key = $idProducto . '_' . $idTalla;
+        if (isset($carritoDb[$key])) {
+            continue;
+        }
+        $carritoDb[$key] = [
+            'id_producto' => $idProducto,
+            'id_talla' => $idTalla,
+            'nombre' => (string)($row['nombre'] ?? 'Producto'),
+            'precio' => (float)($row['precio'] ?? 0),
+            'imagen' => (string)($_SESSION['carrito'][$key]['imagen'] ?? ''),
+            'cantidad' => max(1, (int)($row['cantidad'] ?? 1))
+        ];
+    }
+    $_SESSION['carrito'] = $carritoDb;
+} catch (Exception $e) {
+}
+
+try {
+    $conexion->exec(
+        "CREATE TABLE IF NOT EXISTS deseos_usuario (
+            id_deseo INT AUTO_INCREMENT PRIMARY KEY,
+            id_usuario INT NOT NULL,
+            id_producto INT NOT NULL,
+            fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uk_deseos_usuario_producto (id_usuario, id_producto)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+
+    $stmtDeseos = $conexion->prepare(
+        "SELECT p.id_producto, p.nombre, p.precio
+         FROM deseos_usuario d
+         INNER JOIN productos p ON p.id_producto = d.id_producto
+         WHERE d.id_usuario = :id_usuario
+           AND (p.oculto = 0 OR p.oculto IS NULL)"
+    );
+    $stmtDeseos->bindValue(':id_usuario', $idUsuario, PDO::PARAM_INT);
+    $stmtDeseos->execute();
+    $deseosDb = [];
+    while ($row = $stmtDeseos->fetch(PDO::FETCH_ASSOC)) {
+        $idProducto = (int)($row['id_producto'] ?? 0);
+        if ($idProducto <= 0) {
+            continue;
+        }
+        $deseosDb[$idProducto] = [
+            'id_producto' => $idProducto,
+            'nombre' => (string)($row['nombre'] ?? 'Producto'),
+            'precio' => (float)($row['precio'] ?? 0),
+            'imagen' => (string)($_SESSION['deseos'][$idProducto]['imagen'] ?? '')
+        ];
+    }
+    $_SESSION['deseos'] = $deseosDb;
+} catch (Exception $e) {
+}
+
+$cantidadCarrito = 0;
+foreach ($_SESSION['carrito'] as $item) {
+    $cantidadCarrito += (int)($item['cantidad'] ?? 0);
+}
+
+$base['contador'] = [
+    'carrito' => $cantidadCarrito,
+    'deseos' => count($_SESSION['deseos'])
+];
+
+try {
     $conexion->exec("ALTER TABLE usuarios ADD COLUMN foto_perfil VARCHAR(255) NULL AFTER password");
 } catch (Exception $e) {
 }

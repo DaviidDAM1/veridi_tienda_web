@@ -261,6 +261,9 @@ $idProducto = isset($payload['id_producto']) ? (int)$payload['id_producto'] : (i
 $idTalla = isset($payload['id_talla']) ? (int)$payload['id_talla'] : (isset($_POST['id_talla']) ? (int)$_POST['id_talla'] : 0);
 $delta = isset($payload['delta']) ? (int)$payload['delta'] : (isset($_POST['delta']) ? (int)$_POST['delta'] : 0);
 
+// Always start POST actions from DB state to avoid stale session data overwriting persisted cart.
+syncSessionCartFromDb($conexion);
+
 $itemKey = $idProducto . '_' . $idTalla;
 
 switch ($action) {

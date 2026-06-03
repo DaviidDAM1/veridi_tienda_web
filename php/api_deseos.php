@@ -148,6 +148,7 @@ if ($idUsuario <= 0) {
 }
 
 ensureDeseosTable($conexion);
+$_SESSION['deseos'] = loadDeseosFromDb($conexion, $idUsuario);
 
 $payload = json_decode(file_get_contents('php://input'), true);
 if (!is_array($payload)) {
