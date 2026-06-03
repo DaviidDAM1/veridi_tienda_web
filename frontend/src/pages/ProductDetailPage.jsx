@@ -149,10 +149,25 @@ function ProductDetailPage() {
   };
 
   const handleCreateOutfit = () => {
+    const estilo = String(producto?.estilo || '').trim().toLowerCase();
+    const color = String(producto?.color || '').trim();
+    const categoria = String(producto?.categoria || '').trim();
+
+    let message = 'Quiero un outfit con esta prenda.';
+    if (estilo) {
+      message = `Quiero un outfit ${estilo} con esta prenda.`;
+    }
+    if (color || categoria) {
+      const extras = [];
+      if (categoria) extras.push(`categoria ${categoria}`);
+      if (color) extras.push(`color ${color}`);
+      message += ` La prenda base es ${extras.join(', ')}.`;
+    }
+
     const params = new URLSearchParams();
     params.set('ai', 'open');
     params.set('base_product_id', String(Number(producto.id_producto)));
-    params.set('message', 'Quiero un outfit con esta prenda.');
+    params.set('message', message);
     navigate(`/tienda?${params.toString()}`);
   };
 

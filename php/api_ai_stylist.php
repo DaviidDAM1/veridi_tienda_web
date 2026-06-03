@@ -1013,9 +1013,19 @@ function callOpenAiStylist(
 	?float $presupuesto,
 	?string $preferredStyle,
 	?array $baseProduct,
-	array $candidatePool
+	array $candidatePool,
+	?array &$debug = null
 ): ?array {
+	$debug = [
+		'stage' => 'start',
+		'http_code' => null,
+		'curl_errno' => null,
+		'curl_error' => '',
+		'response_excerpt' => ''
+	];
+
 	if ($apiKey === '' || empty($candidatePool) || !function_exists('curl_init')) {
+		$debug['stage'] = 'preconditions';
 		return null;
 	}
 
@@ -1072,31 +1082,43 @@ function callOpenAiStylist(
 
 	$responseRaw = curl_exec($ch);
 	if ($responseRaw === false) {
+		$debug['stage'] = 'curl_exec';
+		$debug['curl_errno'] = curl_errno($ch);
+		$debug['curl_error'] = (string)curl_error($ch);
 		curl_close($ch);
 		return null;
 	}
 
 	$httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	$debug['http_code'] = $httpCode;
+	$debug['response_excerpt'] = mb_substr((string)$responseRaw, 0, 280, 'UTF-8');
 	curl_close($ch);
 
 	if ($httpCode < 200 || $httpCode >= 300) {
+		$debug['stage'] = 'http_status';
 		return null;
 	}
 
 	$decoded = json_decode($responseRaw, true);
 	if (!is_array($decoded)) {
+		$debug['stage'] = 'decode_top_level';
 		return null;
 	}
 
 	$content = (string)($decoded['choices'][0]['message']['content'] ?? '');
 	if ($content === '') {
+		$debug['stage'] = 'empty_content';
 		return null;
 	}
 
 	$parsed = json_decode($content, true);
 	if (!is_array($parsed)) {
+		$debug['stage'] = 'decode_model_json';
+		$debug['response_excerpt'] = mb_substr($content, 0, 280, 'UTF-8');
 		return null;
 	}
+
+	$debug['stage'] = 'ok';
 
 	return $parsed;
 }
@@ -1421,6 +1443,10 @@ try {
 	$candidatePool = array_values(array_slice($scoredPool, 0, 30));
 	$openAiAttempts = 0;
 	$openAiLastFailure = '';
+	$openAiLastHttpCode = null;
+	$openAiLastCurlError = '';
+	$openAiLastStage = '';
+	$openAiLastResponseExcerpt = '';
 
 	if ($openAiRequired && !$openAiConfigured) {
 		http_response_code(503);
@@ -1451,7 +1477,12 @@ try {
 	if ($apiKey !== '') {
 		for ($try = 1; $try <= 3; $try++) {
 			$openAiAttempts = $try;
-			$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool);
+			$openAiDebug = null;
+			$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool, $openAiDebug);
+			$openAiLastHttpCode = $openAiDebug['http_code'] ?? null;
+			$openAiLastCurlError = (string)($openAiDebug['curl_error'] ?? '');
+			$openAiLastStage = (string)($openAiDebug['stage'] ?? '');
+			$openAiLastResponseExcerpt = (string)($openAiDebug['response_excerpt'] ?? '');
 			if (!is_array($aiRaw)) {
 				$openAiLastFailure = 'request_or_http';
 				continue;
@@ -1471,15 +1502,31 @@ try {
 		}
 
 		if ($openAiRequired && !$llmUsed) {
+			$detailParts = [];
+			if ($openAiLastHttpCode !== null) {
+				$detailParts[] = 'http_code=' . (string)$openAiLastHttpCode;
+			}
+			if ($openAiLastStage !== '') {
+				$detailParts[] = 'stage=' . $openAiLastStage;
+			}
+			if ($openAiLastCurlError !== '') {
+				$detailParts[] = 'curl_error=' . $openAiLastCurlError;
+			}
+			$detailText = empty($detailParts) ? '' : (' Detalle: ' . implode(', ', $detailParts) . '.');
+
 			http_response_code(502);
 			echo json_encode([
 				'ok' => false,
-				'message' => 'OpenAI no respondio correctamente tras varios intentos. Vuelve a intentarlo en unos segundos.',
+				'message' => 'OpenAI no respondio correctamente tras varios intentos.' . $detailText,
 				'meta' => [
 					'openai_required' => true,
 					'openai_status' => 'openai_failed_hard',
 					'openai_attempts' => $openAiAttempts,
-					'openai_last_failure' => $openAiLastFailure
+					'openai_last_failure' => $openAiLastFailure,
+					'openai_last_http_code' => $openAiLastHttpCode,
+					'openai_last_stage' => $openAiLastStage,
+					'openai_last_curl_error' => $openAiLastCurlError,
+					'openai_last_response_excerpt' => $openAiLastResponseExcerpt
 				]
 			], JSON_UNESCAPED_UNICODE);
 			exit;

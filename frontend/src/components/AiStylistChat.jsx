@@ -232,7 +232,12 @@ function AiStylistChat() {
 
   useEffect(() => {
     const search = String(location.search || '');
-    if (!search || handledSearchRef.current === search) {
+    if (!search) {
+      handledSearchRef.current = '';
+      return;
+    }
+
+    if (handledSearchRef.current === search) {
       return;
     }
 
