@@ -165,6 +165,14 @@ function getAdminData(PDO $conexion): array
     $stmtUsuarios = $conexion->query("SELECT id_usuario, nombre, email, password, rol FROM usuarios ORDER BY id_usuario DESC");
     $usuarios = $stmtUsuarios->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+    $stmtValoraciones = $conexion->query(
+        "SELECT v.id_valoracion, v.id_pedido, v.estrellas, v.comentario, v.fecha, u.nombre AS usuario_nombre
+         FROM valoraciones v
+         INNER JOIN usuarios u ON u.id_usuario = v.id_usuario
+         ORDER BY v.fecha DESC"
+    );
+    $valoraciones = $stmtValoraciones->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
     return [
         'categorias' => array_map(static function ($item) {
             return [
@@ -197,7 +205,17 @@ function getAdminData(PDO $conexion): array
                 'rol' => (string)$item['rol'],
                 'password' => (string)$item['password']
             ];
-        }, $usuarios)
+        }, $usuarios),
+        'valoraciones' => array_map(static function ($item) {
+            return [
+                'id_valoracion' => (int)$item['id_valoracion'],
+                'id_pedido' => (int)$item['id_pedido'],
+                'usuario_nombre' => (string)$item['usuario_nombre'],
+                'estrellas' => (int)$item['estrellas'],
+                'comentario' => (string)($item['comentario'] ?? ''),
+                'fecha' => (string)$item['fecha']
+            ];
+        }, $valoraciones)
     ];
 }
 
@@ -395,6 +413,24 @@ try {
             }
 
             $message = 'Stock actualizado correctamente.';
+            break;
+        }
+
+        case 'delete_rating': {
+            $idValoracion = (int)($payload['id_valoracion'] ?? 0);
+            if ($idValoracion <= 0) {
+                throw new InvalidArgumentException('ID de valoración inválido.');
+            }
+
+            $stmt = $conexion->prepare("DELETE FROM valoraciones WHERE id_valoracion = :id_valoracion");
+            $stmt->bindParam(':id_valoracion', $idValoracion, PDO::PARAM_INT);
+            $stmt->execute();
+
+            if ($stmt->rowCount() <= 0) {
+                throw new InvalidArgumentException('No se encontró la valoración a eliminar.');
+            }
+
+            $message = 'Valoración eliminada correctamente.';
             break;
         }
 

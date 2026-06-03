@@ -1998,6 +1998,28 @@ input::placeholder, textarea::placeholder { color: rgba(107,127,168,0.55); }
 .cantidad-numero { min-width: 28px; text-align: center; font-weight: 700; color: var(--v-text); }
 .btn-eliminar { background: transparent; color: var(--v-danger); border: 1px solid rgba(244,63,94,0.35); padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
 .btn-eliminar:hover { background: rgba(244,63,94,0.1); }
+.carrito-acciones .btn-eliminar,
+.carrito-acciones .btn-pagar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 120px;
+    height: 36px;
+    width: auto;
+    padding: 0 14px;
+    border-radius: 8px;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    line-height: 1;
+    box-shadow: none;
+}
+
+.carrito-acciones .btn-pagar:hover {
+    transform: none;
+    box-shadow: none;
+}
 .btn-mover-carrito { background: transparent; color: var(--v-accent); border: 1px solid rgba(139,92,246,0.35); padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s ease; }
 .btn-mover-carrito:hover { background: rgba(139,92,246,0.1); }
 .carrito-resumen, .carrito-total { text-align: right; padding: 20px; background: #ffffff; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: var(--radius-lg); border: 1px solid var(--v-border-2); margin-bottom: 18px; box-shadow: var(--shadow-sm); }

@@ -39,6 +39,7 @@ function AdminPage() {
   const [tallas, setTallas] = useState([]);
   const [productos, setProductos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [valoraciones, setValoraciones] = useState([]);
 
   const [createForm, setCreateForm] = useState(initialCreate);
   const [createImageFile, setCreateImageFile] = useState(null);
@@ -77,6 +78,7 @@ function AdminPage() {
       setTallas(payload.tallas || []);
       setProductos(payload.productos || []);
       setUsuarios(payload.usuarios || []);
+      setValoraciones(payload.valoraciones || []);
       setStockForm((prev) => ({ ...prev, id_talla: prev.id_talla || String(payload.tallas?.[0]?.id_talla || '') }));
     } catch (err) {
       const status = err?.response?.status;
@@ -134,6 +136,8 @@ function AdminPage() {
       setTallas(next.tallas || []);
       setProductos(next.productos || []);
       setUsuarios(next.usuarios || []);
+      setValoraciones(next.valoraciones || []);
+      setValoraciones(next.valoraciones || []);
       setCreateForm(initialCreate);
       setCreateImageFile(null);
     } catch (err) {
@@ -377,6 +381,53 @@ function AdminPage() {
                   <td style={{ padding: 10 }}>{usuario.email}</td>
                   <td style={{ padding: 10 }}>{usuario.rol}</td>
                   <td style={{ padding: 10, fontFamily: 'Consolas, monospace', fontSize: 12, wordBreak: 'break-all' }}>{usuario.password}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <h2 style={{ fontSize: 22, marginTop: 24 }}>Valoraciones de usuarios</h2>
+        <div style={{ overflowX: 'auto', border: '1px solid var(--veridi-border)', borderRadius: 10 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 980 }}>
+            <thead>
+              <tr style={{ background: 'rgba(212,175,55,0.15)' }}>
+                <th style={{ padding: 10, textAlign: 'left' }}>ID</th>
+                <th style={{ padding: 10, textAlign: 'left' }}>Pedido</th>
+                <th style={{ padding: 10, textAlign: 'left' }}>Usuario</th>
+                <th style={{ padding: 10, textAlign: 'left' }}>Estrellas</th>
+                <th style={{ padding: 10, textAlign: 'left' }}>Comentario</th>
+                <th style={{ padding: 10, textAlign: 'left' }}>Fecha</th>
+                <th style={{ padding: 10, textAlign: 'left' }}>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {valoraciones.length === 0 ? (
+                <tr>
+                  <td colSpan={7} style={{ padding: 12, color: 'var(--veridi-text-secondary)' }}>
+                    No hay valoraciones registradas.
+                  </td>
+                </tr>
+              ) : valoraciones.map((valoracion) => (
+                <tr key={valoracion.id_valoracion} style={{ borderTop: '1px solid var(--veridi-border)' }}>
+                  <td style={{ padding: 10 }}>{valoracion.id_valoracion}</td>
+                  <td style={{ padding: 10 }}>{valoracion.id_pedido}</td>
+                  <td style={{ padding: 10 }}>{valoracion.usuario_nombre}</td>
+                  <td style={{ padding: 10 }}>{'★'.repeat(Math.max(1, Math.min(5, Number(valoracion.estrellas) || 1)))}</td>
+                  <td style={{ padding: 10, maxWidth: 360, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={valoracion.comentario || ''}>
+                    {String(valoracion.comentario || '').trim() !== '' ? valoracion.comentario : 'Sin comentario'}
+                  </td>
+                  <td style={{ padding: 10 }}>{new Date(valoracion.fecha).toLocaleString('es-ES')}</td>
+                  <td style={{ padding: 10 }}>
+                    <button
+                      type="button"
+                      onClick={() => submitAction({ action: 'delete_rating', id_valoracion: valoracion.id_valoracion })}
+                      style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d32f2f', background: 'rgba(211, 47, 47, 0.1)', color: '#d32f2f', cursor: 'pointer' }}
+                      disabled={submitting}
+                    >
+                      Eliminar valoración
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
