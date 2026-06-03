@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - '.github/workflows/deploy-hostinger.yml'
       - 'php/**'
       - 'config/**'
       - 'css/**'
@@ -14,6 +15,7 @@ on:
       - 'bd/**'
       - 'index.php'
       - 'vercel.json'
+  workflow_dispatch:
 
 jobs:
   deploy:
