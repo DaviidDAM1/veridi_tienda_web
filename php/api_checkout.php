@@ -197,6 +197,14 @@ try {
         $stmtDetalle->execute();
     }
 
+    // Limpiar carrito en DB
+    $idCarrito = $_SESSION['carrito_id'] ?? null;
+    if ($idCarrito) {
+        $stmtDelDetalle = $conexion->prepare("DELETE FROM carrito_detalle WHERE id_carrito = :id_carrito");
+        $stmtDelDetalle->bindParam(':id_carrito', $idCarrito, PDO::PARAM_INT);
+        $stmtDelDetalle->execute();
+    }
+
     $conexion->commit();
     unset($_SESSION['carrito']);
 

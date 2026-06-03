@@ -7,6 +7,7 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [error, setError] = useState('');
   const [requiresLogin, setRequiresLogin] = useState(false);
   const [checkout, setCheckout] = useState({ usuario: { nombre: '', email: '' }, items: [], total: 0, isEmpty: true });
@@ -53,8 +54,7 @@ function CheckoutPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async (event) => {
-    event.preventDefault();
+  const processPayment = async () => {
     setSubmitting(true);
     setError('');
 
@@ -73,6 +73,16 @@ function CheckoutPage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmPayment = () => {
+    setShowConfirmModal(false);
+    processPayment();
   };
 
   if (loading) {
@@ -217,6 +227,72 @@ function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {showConfirmModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 999
+          }}
+        >
+          <div
+            style={{
+              width: 'min(92vw, 460px)',
+              background: 'var(--veridi-dark)',
+              border: '2px solid var(--veridi-gold)',
+              borderRadius: 8,
+              padding: 24,
+              boxShadow: '0 18px 45px rgba(0, 0, 0, 0.4)'
+            }}
+          >
+            <h3 style={{ color: 'var(--veridi-gold)', margin: '0 0 10px 0', fontSize: 22 }}>Confirmar compra</h3>
+            <p style={{ color: 'var(--veridi-text)', margin: '0 0 20px 0', lineHeight: 1.45 }}>
+              ¿Seguro que quieres finalizar la compra?
+            </p>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                disabled={submitting}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--veridi-gold)',
+                  border: '2px solid var(--veridi-gold)',
+                  borderRadius: 6,
+                  padding: '10px 16px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmPayment}
+                disabled={submitting}
+                style={{
+                  background: 'linear-gradient(135deg, var(--veridi-gold-dark) 0%, var(--veridi-gold) 100%)',
+                  color: 'var(--veridi-black)',
+                  border: 'none',
+                  borderRadius: 6,
+                  padding: '10px 18px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
