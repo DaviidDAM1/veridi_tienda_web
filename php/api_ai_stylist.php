@@ -7,10 +7,11 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-if ($origin === 'http://localhost:5173' || $origin === 'http://127.0.0.1:5173') {
+if ($origin !== '' && preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^https?://([a-z0-9-]+\.)*vercel\.app$|^https?://([a-z0-9-]+\.)*masterendaw\.es$#i', $origin)) {
 	header('Access-Control-Allow-Origin: ' . $origin);
 	header('Access-Control-Allow-Credentials: true');
 }
+header('Vary: Origin');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
 header('Content-Type: application/json; charset=utf-8');
