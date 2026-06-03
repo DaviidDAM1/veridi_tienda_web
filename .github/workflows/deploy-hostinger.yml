@@ -18,7 +18,7 @@ jobs:
         timeout-minutes: 10
         with:
           server: ${{ secrets.HOSTINGER_FTP_SERVER }}
-          protocol: ftp
+          protocol: ftps
           port: 21
           username: ${{ secrets.HOSTINGER_FTP_USERNAME }}
           password: ${{ secrets.HOSTINGER_FTP_PASSWORD }}
@@ -33,6 +33,7 @@ jobs:
             frontend/**
             node_modules/**
             .vscode/**
+            bd/**
             config/conexion.php
             config/openai.local.php
             README.md
