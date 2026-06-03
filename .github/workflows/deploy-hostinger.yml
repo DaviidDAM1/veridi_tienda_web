@@ -44,7 +44,11 @@ jobs:
             frontend/**
             node_modules/**
             .vscode/**
+            config/conexion.php
+            config/openai.local.php
             README.md
             *.md
             *.log
+            *.zip
+            package-lock.json
             **/.DS_Store
