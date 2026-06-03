@@ -33,6 +33,12 @@ function AdminPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [ratingDeletedModalOpen, setRatingDeletedModalOpen] = useState(false);
+  const [confirmDeleteModal, setConfirmDeleteModal] = useState({
+    open: false,
+    type: '',
+    payload: null,
+    message: ''
+  });
   const [requiresLogin, setRequiresLogin] = useState(false);
   const [requiresAdmin, setRequiresAdmin] = useState(false);
 
@@ -197,6 +203,47 @@ function AdminPage() {
     }
   };
 
+  const askDeleteProductConfirmation = () => {
+    const idProducto = Number(deleteForm.id_producto || 0);
+    if (idProducto <= 0) {
+      setError('Indica un ID de producto válido para eliminar.');
+      return;
+    }
+
+    setConfirmDeleteModal({
+      open: true,
+      type: 'product',
+      payload: { id_producto: idProducto },
+      message: '¿Seguro que quieres eliminar este producto?'
+    });
+  };
+
+  const askDeleteRatingConfirmation = (idValoracion) => {
+    setConfirmDeleteModal({
+      open: true,
+      type: 'rating',
+      payload: { id_valoracion: Number(idValoracion || 0) },
+      message: '¿Seguro que quieres eliminar esta valoración?'
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    const modal = confirmDeleteModal;
+    setConfirmDeleteModal({ open: false, type: '', payload: null, message: '' });
+
+    if (modal.type === 'product') {
+      await submitAction({ action: 'delete_product', ...(modal.payload || {}) }, 'delete');
+      return;
+    }
+
+    if (modal.type === 'rating') {
+      const idValoracion = Number(modal.payload?.id_valoracion || 0);
+      if (idValoracion > 0) {
+        await handleDeleteRating(idValoracion);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <main>
@@ -300,7 +347,7 @@ function AdminPage() {
 
           <div style={{ background: 'var(--veridi-surface)', border: '1px solid var(--veridi-border)', borderRadius: 10, padding: 16 }}>
             <h3 style={{ fontSize: 18 }}>Eliminar producto</h3>
-            <form onSubmit={(e) => { e.preventDefault(); submitAction({ action: 'delete_product', ...deleteForm }, 'delete'); }} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <form onSubmit={(e) => { e.preventDefault(); askDeleteProductConfirmation(); }} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <input type="number" min="1" value={deleteForm.id_producto} onChange={(e) => setDeleteForm({ id_producto: e.target.value })} placeholder="ID producto" required />
               <button type="submit" className="profile-save-btn" style={{ background: 'linear-gradient(135deg, #8f2323 0%, #d32f2f 100%)', color: '#fff' }} disabled={submitting}>
                 {submitting ? 'Procesando...' : 'Eliminar producto'}
@@ -439,7 +486,7 @@ function AdminPage() {
                   <td style={{ padding: 10 }}>
                     <button
                       type="button"
-                      onClick={() => handleDeleteRating(valoracion.id_valoracion)}
+                      onClick={() => askDeleteRatingConfirmation(valoracion.id_valoracion)}
                       style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid #d32f2f', background: 'rgba(211, 47, 47, 0.1)', color: '#d32f2f', cursor: 'pointer' }}
                       disabled={submitting}
                     >
@@ -495,6 +542,70 @@ function AdminPage() {
             >
               Aceptar
             </button>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteModal.open && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+        >
+          <div
+            style={{
+              width: 'min(92vw, 430px)',
+              background: 'var(--veridi-surface)',
+              border: '1px solid var(--veridi-border)',
+              borderRadius: 10,
+              padding: 24,
+              boxShadow: '0 14px 34px rgba(0, 0, 0, 0.32)'
+            }}
+          >
+            <h3 style={{ margin: '0 0 10px 0', color: 'var(--veridi-text)' }}>Confirmar eliminación</h3>
+            <p style={{ margin: '0 0 18px 0', color: 'var(--veridi-text-secondary)' }}>
+              {confirmDeleteModal.message}
+            </p>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteModal({ open: false, type: '', payload: null, message: '' })}
+                style={{
+                  background: 'transparent',
+                  color: 'var(--veridi-gold)',
+                  border: '1px solid var(--veridi-gold)',
+                  borderRadius: 8,
+                  padding: '9px 14px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                style={{
+                  background: 'var(--veridi-gold)',
+                  color: 'var(--veridi-black)',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '9px 14px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                Aceptar
+              </button>
+            </div>
           </div>
         </div>
       )}
