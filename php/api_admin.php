@@ -1,5 +1,6 @@
 <?php
 require_once "../config/conexion.php";
+require_once "../config/imagenes.php";
 
 if (PHP_SESSION_NONE === session_status()) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -79,6 +80,68 @@ function categoriaEsGorras(PDO $conexion, int $idCategoria): bool
     return mb_strtolower(trim((string)$row['nombre']), 'UTF-8') === 'gorras';
 }
 
+function procesarImagenProductoAdmin(array $archivo, int $idProducto): string
+{
+    if (($archivo['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
+        return '';
+    }
+
+    if (($archivo['error'] ?? UPLOAD_ERR_OK) !== UPLOAD_ERR_OK) {
+        throw new InvalidArgumentException('No se pudo procesar la imagen seleccionada.');
+    }
+
+    $tamanoMaximo = 5 * 1024 * 1024;
+    if (($archivo['size'] ?? 0) > $tamanoMaximo) {
+        throw new InvalidArgumentException('La imagen supera el tamaño máximo (5MB).');
+    }
+
+    $tmp = (string)($archivo['tmp_name'] ?? '');
+    $mime = '';
+    if ($tmp !== '') {
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mime = (string)$finfo->file($tmp);
+    }
+
+    $permitidos = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp'
+    ];
+
+    if (!isset($permitidos[$mime])) {
+        throw new InvalidArgumentException('Formato de imagen no permitido (solo JPG, PNG o WEBP).');
+    }
+
+    $extension = $permitidos[$mime];
+    $nombreArchivo = 'producto_' . $idProducto . '_' . time() . '.' . $extension;
+    $directorioAbs = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'imgnuevas' . DIRECTORY_SEPARATOR . 'admin';
+    if (!is_dir($directorioAbs)) {
+        @mkdir($directorioAbs, 0777, true);
+    }
+
+    $rutaAbs = $directorioAbs . DIRECTORY_SEPARATOR . $nombreArchivo;
+    $rutaRel = 'imgnuevas/admin/' . $nombreArchivo;
+
+    if (!move_uploaded_file($tmp, $rutaAbs)) {
+        throw new InvalidArgumentException('No se pudo guardar la imagen del producto.');
+    }
+
+    return $rutaRel;
+}
+
+function eliminarArchivoRelativo(string $rutaRelativa): void
+{
+    $rutaRelativa = trim($rutaRelativa);
+    if ($rutaRelativa === '') {
+        return;
+    }
+
+    $rutaAbs = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rutaRelativa);
+    if (is_file($rutaAbs)) {
+        @unlink($rutaAbs);
+    }
+}
+
 function getAdminData(PDO $conexion): array
 {
     $stmtCategorias = $conexion->query("SELECT id_categoria, nombre FROM categorias ORDER BY nombre ASC");
@@ -152,9 +215,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$payload = json_decode(file_get_contents('php://input'), true);
-if (!is_array($payload)) {
-    $payload = [];
+
+$isMultipart = stripos((string)($_SERVER['CONTENT_TYPE'] ?? ''), 'multipart/form-data') !== false;
+if ($isMultipart) {
+    $payload = $_POST;
+} else {
+    $payload = json_decode(file_get_contents('php://input'), true);
+    if (!is_array($payload)) {
+        $payload = [];
+    }
 }
 
 $action = trim((string)($payload['action'] ?? ''));
@@ -183,6 +252,9 @@ try {
                 $stockInicial = 0;
             }
 
+            $rutaImagenSubida = '';
+            $conexion->beginTransaction();
+
             $stmt = $conexion->prepare("INSERT INTO productos (nombre, descripcion, precio, color, estilo, material, id_categoria, oculto) VALUES (:nombre, :descripcion, :precio, :color, :estilo, :material, :id_categoria, 0)");
             $stmt->bindParam(':nombre', $nombre);
             $stmt->bindParam(':descripcion', $descripcion);
@@ -206,6 +278,18 @@ try {
                 $stmtInsertTalla->bindParam(':stock', $stockInicial, PDO::PARAM_INT);
                 $stmtInsertTalla->execute();
             }
+
+            if (isset($_FILES['imagen_producto']) && is_array($_FILES['imagen_producto'])) {
+                $rutaImagenSubida = procesarImagenProductoAdmin($_FILES['imagen_producto'], $idProducto);
+                if ($rutaImagenSubida !== '') {
+                    $guardada = guardarImagenProductoPersonalizada($idProducto, $rutaImagenSubida);
+                    if (!$guardada) {
+                        throw new RuntimeException('No se pudo registrar la imagen del producto.');
+                    }
+                }
+            }
+
+            $conexion->commit();
 
             $message = 'Producto creado correctamente.';
             break;
@@ -324,11 +408,17 @@ try {
         'data' => getAdminData($conexion)
     ], JSON_UNESCAPED_UNICODE);
 } catch (InvalidArgumentException $e) {
+    if ($conexion->inTransaction()) {
+        $conexion->rollBack();
+    }
     echo json_encode([
         'ok' => false,
         'message' => $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
+    if ($conexion->inTransaction()) {
+        $conexion->rollBack();
+    }
     echo json_encode([
         'ok' => false,
         'message' => 'Ocurrió un error al procesar la acción.'

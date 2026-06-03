@@ -41,6 +41,7 @@ function AdminPage() {
   const [usuarios, setUsuarios] = useState([]);
 
   const [createForm, setCreateForm] = useState(initialCreate);
+  const [createImageFile, setCreateImageFile] = useState(null);
   const [editForm, setEditForm] = useState(initialEdit);
   const [deleteForm, setDeleteForm] = useState(initialDelete);
   const [stockForm, setStockForm] = useState(initialStock);
@@ -95,6 +96,52 @@ function AdminPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const handleCreateProduct = async (event) => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const formData = new FormData();
+      formData.append('action', 'create_product');
+      formData.append('nombre', createForm.nombre);
+      formData.append('descripcion', createForm.descripcion);
+      formData.append('precio', String(createForm.precio));
+      formData.append('color', createForm.color);
+      formData.append('estilo', createForm.estilo);
+      formData.append('material', createForm.material);
+      formData.append('id_categoria', String(createForm.id_categoria));
+      formData.append('stock_inicial', String(createForm.stock_inicial));
+
+      if (createImageFile) {
+        formData.append('imagen_producto', createImageFile);
+      }
+
+      const response = await api.post('/php/api_admin.php', formData);
+      const data = response.data;
+
+      if (!data?.ok) {
+        setError(data?.message || 'No se pudo crear el producto.');
+        return;
+      }
+
+      setSuccess(data.message || 'Producto creado correctamente.');
+
+      const next = data.data || {};
+      setCategorias(next.categorias || []);
+      setTallas(next.tallas || []);
+      setProductos(next.productos || []);
+      setUsuarios(next.usuarios || []);
+      setCreateForm(initialCreate);
+      setCreateImageFile(null);
+    } catch (err) {
+      setError(err?.response?.data?.message || 'No se pudo crear el producto.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const submitAction = async (payload, clearMode = '') => {
     setSubmitting(true);
@@ -174,7 +221,7 @@ function AdminPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 24 }}>
           <div style={{ background: 'var(--veridi-surface)', border: '1px solid var(--veridi-border)', borderRadius: 10, padding: 16 }}>
             <h3 style={{ fontSize: 18 }}>Crear producto</h3>
-            <form onSubmit={(e) => { e.preventDefault(); submitAction({ action: 'create_product', ...createForm }, 'create'); }} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <form onSubmit={handleCreateProduct} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <input type="text" value={createForm.nombre} onChange={(e) => setCreateForm((p) => ({ ...p, nombre: e.target.value }))} placeholder="Nombre" required />
               <textarea rows="3" value={createForm.descripcion} onChange={(e) => setCreateForm((p) => ({ ...p, descripcion: e.target.value }))} placeholder="Descripción"></textarea>
               <input type="number" step="0.01" min="0.01" value={createForm.precio} onChange={(e) => setCreateForm((p) => ({ ...p, precio: e.target.value }))} placeholder="Precio" required />
@@ -192,6 +239,15 @@ function AdminPage() {
                 ))}
               </select>
               <input type="number" min="0" value={createForm.stock_inicial} onChange={(e) => setCreateForm((p) => ({ ...p, stock_inicial: e.target.value }))} placeholder="Stock inicial por talla (ej: 20)" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label htmlFor="admin-product-image" style={{ fontWeight: 600 }}>Imagen del producto (opcional)</label>
+                <input
+                  id="admin-product-image"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => setCreateImageFile(e.target.files?.[0] || null)}
+                />
+              </div>
               <button type="submit" className="profile-save-btn" disabled={submitting}>{submitting ? 'Procesando...' : 'Crear producto'}</button>
             </form>
           </div>

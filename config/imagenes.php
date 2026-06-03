@@ -78,6 +78,88 @@ $imagenesProducto = [
     61 => 'imgnuevas/pantalonVerdeCargo.png',
 ];
 
+function rutaImagenesPersonalizadasConfig()
+{
+    return __DIR__ . DIRECTORY_SEPARATOR . 'imagenes_personalizadas.json';
+}
+
+function obtenerMapeoImagenesPersonalizadas()
+{
+    static $cache = null;
+    if (is_array($cache)) {
+        return $cache;
+    }
+
+    $ruta = rutaImagenesPersonalizadasConfig();
+    if (!is_file($ruta)) {
+        $cache = [];
+        return $cache;
+    }
+
+    $raw = @file_get_contents($ruta);
+    if ($raw === false || trim($raw) === '') {
+        $cache = [];
+        return $cache;
+    }
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        $cache = [];
+        return $cache;
+    }
+
+    $salida = [];
+    foreach ($decoded as $id => $rutaRelativa) {
+        $idProducto = (int)$id;
+        $rutaLimpia = trim((string)$rutaRelativa);
+        if ($idProducto > 0 && $rutaLimpia !== '') {
+            $salida[$idProducto] = str_replace('\\', '/', $rutaLimpia);
+        }
+    }
+
+    $cache = $salida;
+    return $cache;
+}
+
+function guardarImagenProductoPersonalizada($idProducto, $rutaRelativa)
+{
+    $idProducto = (int)$idProducto;
+    $rutaRelativa = trim((string)$rutaRelativa);
+    if ($idProducto <= 0 || $rutaRelativa === '') {
+        return false;
+    }
+
+    $rutaConfig = rutaImagenesPersonalizadasConfig();
+    $actual = [];
+    if (is_file($rutaConfig)) {
+        $rawActual = @file_get_contents($rutaConfig);
+        $decodedActual = $rawActual !== false ? json_decode($rawActual, true) : null;
+        if (is_array($decodedActual)) {
+            foreach ($decodedActual as $id => $ruta) {
+                $idInt = (int)$id;
+                $rutaLimpia = trim((string)$ruta);
+                if ($idInt > 0 && $rutaLimpia !== '') {
+                    $actual[$idInt] = str_replace('\\', '/', $rutaLimpia);
+                }
+            }
+        }
+    }
+
+    $actual[$idProducto] = str_replace('\\', '/', $rutaRelativa);
+
+    $json = json_encode($actual, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    if ($json === false) {
+        return false;
+    }
+
+    $ok = @file_put_contents($rutaConfig, $json, LOCK_EX);
+    if ($ok === false) {
+        return false;
+    }
+
+    return true;
+}
+
 function normalizarNombreImagen($texto)
 {
     $texto = mb_strtolower(trim((string)$texto), 'UTF-8');
@@ -96,6 +178,11 @@ function normalizarNombreImagen($texto)
 
 function obtenerImagenProducto($idProducto, $nombreProducto = '') {
     global $imagenesProducto;
+
+    $personalizadas = obtenerMapeoImagenesPersonalizadas();
+    if (isset($personalizadas[(int)$idProducto])) {
+        return $personalizadas[(int)$idProducto];
+    }
 
     if (isset($imagenesProducto[$idProducto])) {
         return $imagenesProducto[$idProducto];
