@@ -96,6 +96,13 @@ $email = trim((string)($payload['email'] ?? ''));
 $tipo = trim((string)($payload['tipo'] ?? ''));
 $mensaje = trim((string)($payload['mensaje'] ?? ''));
 
+if ($nombre === '') {
+    $nombre = (string)($usuario['nombre'] ?? '');
+}
+if ($email === '') {
+    $email = (string)($usuario['email'] ?? '');
+}
+
 if ($email !== $usuario['email']) {
     echo json_encode([
         'ok' => false,
@@ -104,10 +111,10 @@ if ($email !== $usuario['email']) {
     exit;
 }
 
-if ($email === '' || $tipo === '' || $mensaje === '') {
+if ($tipo === '' || $mensaje === '') {
     echo json_encode([
         'ok' => false,
-        'message' => '❌ Todos los campos son obligatorios.'
+        'message' => '❌ Debes completar tipo de asunto y mensaje.'
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }

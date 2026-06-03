@@ -127,16 +127,6 @@ if (empty($_SESSION['carrito'])) {
     exit;
 }
 
-if ($email === '' || $calle === '' || $ciudad === '' || $codigoPostal === '' || $pais === '') {
-    echo json_encode(['ok' => false, 'message' => 'Todos los campos de dirección son requeridos.'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo json_encode(['ok' => false, 'message' => 'Email inválido.'], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
 $stmt = $conexion->prepare("SELECT id_usuario, email FROM usuarios WHERE id_usuario = :id_usuario LIMIT 1");
 $stmt->bindValue(':id_usuario', (int)$_SESSION['usuario_id'], PDO::PARAM_INT);
 $stmt->execute();
@@ -144,6 +134,27 @@ $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$usuario) {
     echo json_encode(['ok' => false, 'message' => 'Tu sesión ya no es válida. Inicia sesión de nuevo.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if ($email === '') {
+    $email = (string)($usuario['email'] ?? '');
+}
+
+$missing = [];
+if ($email === '') $missing[] = 'email';
+if ($calle === '') $missing[] = 'calle';
+if ($ciudad === '') $missing[] = 'ciudad';
+if ($codigoPostal === '') $missing[] = 'codigo_postal';
+if ($pais === '') $missing[] = 'pais';
+
+if (!empty($missing)) {
+    echo json_encode(['ok' => false, 'message' => 'Faltan campos: ' . implode(', ', $missing) . '.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo json_encode(['ok' => false, 'message' => 'Email inválido.'], JSON_UNESCAPED_UNICODE);
     exit;
 }
 
