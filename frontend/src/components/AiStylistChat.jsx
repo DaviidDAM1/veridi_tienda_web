@@ -93,7 +93,19 @@ function AiStylistChat() {
 
       setResult(data);
     } catch (e) {
-      setError('No se pudo obtener recomendacion.');
+      const backendMessage = e?.response?.data?.message;
+      const backendMeta = e?.response?.data?.meta;
+      const attempts = Number(backendMeta?.openai_attempts || 0);
+
+      if (backendMessage) {
+        if (attempts > 0) {
+          setError(`${backendMessage} (intentos: ${attempts})`);
+        } else {
+          setError(backendMessage);
+        }
+      } else {
+        setError('No se pudo obtener recomendacion.');
+      }
       setResult(null);
     } finally {
       setLoading(false);
