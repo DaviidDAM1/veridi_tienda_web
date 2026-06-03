@@ -368,7 +368,7 @@ function TiendaPage() {
           )}
         </div>
 
-        <h3>Encuentra el producto que estás buscando</h3>
+        
 
         <div className="barra-busqueda">
           <form onSubmit={(event) => event.preventDefault()} id="form-busqueda">
