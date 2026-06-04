@@ -62,6 +62,29 @@ const formatColorLabel = (value) => {
   return text.charAt(0).toUpperCase() + text.slice(1);
 };
 
+const sanitizeTallaOptions = (items) => {
+  const order = ['S', 'M', 'L', 'XL', '40', '41', '42', 'Única'];
+  const allowed = new Set(order);
+  const map = new Map();
+
+  (Array.isArray(items) ? items : []).forEach((item) => {
+    const raw = String(item || '').trim();
+    if (!raw) return;
+
+    const normalized = raw
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    const canonical = normalized === 'unica' || normalized === 'asnica' ? 'Única' : raw.toUpperCase();
+    if (allowed.has(canonical)) {
+      map.set(canonical, canonical);
+    }
+  });
+
+  return [...map.keys()].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+};
+
 function TiendaPage() {
   const requestSeqRef = useRef(0);
   const hasLoadedOnceRef = useRef(false);
@@ -241,7 +264,7 @@ function TiendaPage() {
   };
 
   const opcionesFiltro = {
-    talla: filtrosData.tallas || [],
+    talla: sanitizeTallaOptions(filtrosData.tallas),
     color: filtrosData.colores || [],
     estilo: filtrosData.estilos || []
   };

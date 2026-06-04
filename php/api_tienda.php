@@ -57,6 +57,35 @@ function getArrayParam(string $key): array
     return [];
 }
 
+function normalizarTallaFiltro(string $nombre): ?string
+{
+    $raw = trim($nombre);
+    if ($raw === '') {
+        return null;
+    }
+
+    $lower = strtolower($raw);
+    $ascii = strtr($lower, [
+        'á' => 'a',
+        'é' => 'e',
+        'í' => 'i',
+        'ó' => 'o',
+        'ú' => 'u',
+        'ü' => 'u'
+    ]);
+
+    // Defensive fix for typo/encoding artifacts like "asnica" / "Ãšnica".
+    if (in_array($ascii, ['unica', 'asnica', 'ašnica', 'asn ica', 'ãšnica'], true)) {
+        return 'Única';
+    }
+
+    if (in_array($ascii, ['s', 'm', 'l', 'xl', '40', '41', '42'], true)) {
+        return strtoupper($ascii);
+    }
+
+    return null;
+}
+
 $limiteSolicitado = isset($_GET['limite']) ? (int)$_GET['limite'] : 0;
 $productosPorPagina = $limiteSolicitado > 0 ? min(200, $limiteSolicitado) : 1000;
 $paginaActual = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
@@ -66,7 +95,7 @@ $buscar = trim($_GET['buscar'] ?? '');
 $categoria = isset($_GET['categoria']) ? (int)$_GET['categoria'] : 0;
 $precioMin = isset($_GET['precio_min']) && $_GET['precio_min'] !== '' ? (float)$_GET['precio_min'] : null;
 $precioMax = isset($_GET['precio_max']) && $_GET['precio_max'] !== '' ? (float)$_GET['precio_max'] : null;
-$tallas = getArrayParam('talla');
+$tallas = array_values(array_filter(array_unique(array_map('normalizarTallaFiltro', getArrayParam('talla')))));
 $colores = getArrayParam('color');
 $estilos = getArrayParam('estilo');
 $ordenar = trim($_GET['ordenar'] ?? '');
@@ -209,7 +238,19 @@ $stmtCat = $conexion->query("SELECT id_categoria, nombre FROM categorias ORDER B
 $categorias = $stmtCat->fetchAll(PDO::FETCH_ASSOC);
 
 $stmtTallas = $conexion->query("SELECT t.nombre FROM tallas t INNER JOIN producto_tallas pt ON t.id_talla = pt.id_talla INNER JOIN productos p ON p.id_producto = pt.id_producto WHERE (p.oculto = 0 OR p.oculto IS NULL) GROUP BY t.id_talla, t.nombre ORDER BY t.id_talla ASC");
-$tallasDisponibles = array_map(static fn($row) => $row['nombre'], $stmtTallas->fetchAll(PDO::FETCH_ASSOC));
+$tallasRaw = array_map(static fn($row) => normalizarTallaFiltro((string)($row['nombre'] ?? '')), $stmtTallas->fetchAll(PDO::FETCH_ASSOC));
+$tallasDisponibles = array_values(array_filter(array_unique($tallasRaw)));
+
+$ordenTallas = ['S', 'M', 'L', 'XL', '40', '41', '42', 'Única'];
+$ordenMapa = array_flip($ordenTallas);
+usort($tallasDisponibles, static function ($a, $b) use ($ordenMapa) {
+    $oa = $ordenMapa[$a] ?? 999;
+    $ob = $ordenMapa[$b] ?? 999;
+    if ($oa === $ob) {
+        return strcmp($a, $b);
+    }
+    return $oa <=> $ob;
+});
 
 $stmtColores = $conexion->query("SELECT DISTINCT color FROM productos WHERE color IS NOT NULL AND color != '' AND (oculto = 0 OR oculto IS NULL) ORDER BY color ASC");
 $coloresDisponibles = array_map(static fn($row) => $row['color'], $stmtColores->fetchAll(PDO::FETCH_ASSOC));
