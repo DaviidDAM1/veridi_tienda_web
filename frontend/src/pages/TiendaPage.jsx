@@ -76,7 +76,13 @@ const sanitizeTallaOptions = (items) => {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
-    const canonical = normalized === 'unica' || normalized === 'asnica' ? 'Única' : raw.toUpperCase();
+    let canonical = null;
+    if (normalized === 'unica' || normalized === 'asnica') {
+      canonical = 'Única';
+    } else if (['s', 'm', 'l', 'xl', '40', '41', '42'].includes(normalized)) {
+      canonical = normalized.toUpperCase();
+    }
+
     if (allowed.has(canonical)) {
       map.set(canonical, canonical);
     }
