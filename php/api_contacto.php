@@ -31,6 +31,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// Función para asegurar que la tabla contacto existe
+function ensureContactoTableExists(PDO $conexion): bool
+{
+    try {
+        $checkTable = $conexion->query("SHOW TABLES LIKE 'contacto'");
+        if ($checkTable && $checkTable->rowCount() === 0) {
+            // Crear la tabla si no existe
+            $createTableSQL = "
+            CREATE TABLE IF NOT EXISTS contacto (
+                id_contacto INT AUTO_INCREMENT PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL,
+                email VARCHAR(150) NOT NULL,
+                asunto VARCHAR(200),
+                mensaje TEXT NOT NULL,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                leido BOOLEAN DEFAULT FALSE
+            )
+            ";
+            $conexion->exec($createTableSQL);
+            error_log("Tabla contacto creada exitosamente");
+            return true;
+        }
+        return true;
+    } catch (Exception $e) {
+        error_log("Error asegurando tabla contacto: " . $e->getMessage());
+        return false;
+    }
+}
+
 $emailWeb = 'info@veridi.com';
 
 function getUsuarioActual(PDO $conexion): ?array
@@ -135,15 +164,31 @@ if ($nombre === '') {
     exit;
 }
 
-$stmt = $conexion->prepare("INSERT INTO contacto (nombre, email, asunto, mensaje, contrasena) VALUES (?, ?, ?, ?, NULL)");
-$ok = $stmt->execute([$nombre, $email, $tipo, $mensaje]);
-
-if (!$ok) {
-    $errorInfo = $stmt->errorInfo();
-    error_log("Database error in contacto insert: " . print_r($errorInfo, true));
+// Asegurar que la tabla existe antes de insertar
+if (!ensureContactoTableExists($conexion)) {
     echo json_encode([
         'ok' => false,
-        'message' => '❌ Hubo un error al enviar el mensaje. Intenta de nuevo.'
+        'message' => '❌ Error de base de datos: no se pudo verificar la tabla de contacto.'
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+try {
+    $stmt = $conexion->prepare("INSERT INTO contacto (nombre, email, asunto, mensaje) VALUES (?, ?, ?, ?)");
+    if (!$stmt) {
+        throw new Exception("Error preparando consulta SQL");
+    }
+    
+    $result = $stmt->execute([$nombre, $email, $tipo, $mensaje]);
+    if (!$result) {
+        $errorInfo = $stmt->errorInfo();
+        throw new Exception("Error SQL: " . ($errorInfo[2] ?? "Desconocido"));
+    }
+} catch (Exception $e) {
+    error_log("Contact form error: " . $e->getMessage());
+    echo json_encode([
+        'ok' => false,
+        'message' => '❌ Error: ' . $e->getMessage()
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }

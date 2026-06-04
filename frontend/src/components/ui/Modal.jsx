@@ -1,11 +1,12 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import './Modal.css';
 
 function Modal({ isOpen, title, message, onClose, buttonText = 'Aceptar' }) {
   if (!isOpen) return null;
 
-  return (
-    <div className="modal-overlay">
+  return createPortal(
+    <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="modal-content">
         <div className="modal-header">
           <h2>{title}</h2>
@@ -19,7 +20,8 @@ function Modal({ isOpen, title, message, onClose, buttonText = 'Aceptar' }) {
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
