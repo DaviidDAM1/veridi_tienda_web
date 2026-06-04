@@ -133,6 +133,27 @@ function detectExcludedStylesFromMessage(string $message): array
 	return [];
 }
 
+function detectLayerPreferenceFromMessage(string $message): string
+{
+	$text = normalizeText($message);
+	if ($text === '') {
+		return '';
+	}
+
+	$winterRequested = preg_match('/\binvierno\b|\bfrio\b|\bhelad|\bbajas temperaturas\b|\babrigate\b|\babrigar/', $text) === 1;
+	$summerRequested = preg_match('/\bverano\b|\bcalor\b|\bcaluroso\b|\balta[s]? temperaturas\b|\bsofocante\b/', $text) === 1;
+
+	if ($winterRequested && !$summerRequested) {
+		return 'require';
+	}
+
+	if ($summerRequested && !$winterRequested) {
+		return 'forbid';
+	}
+
+	return '';
+}
+
 function chooseAutoStyleForOutfit(
 	array $scored,
 	array $slotCategories,
@@ -989,6 +1010,94 @@ function diversifyOutfitWithHistory(
 	return withPantalonAlias($bestVariant);
 }
 
+function enforceLayerPreferenceOnOutfit(
+	array $outfit,
+	array $scored,
+	array $slotCategories,
+	?string $preferredStyle,
+	?string $requiredColor,
+	bool $strictColorMode,
+	array $excludedStyles,
+	string $layerPreference
+): array {
+	$normalized = [
+		'top_main' => is_array($outfit['top_main'] ?? null) ? $outfit['top_main'] : null,
+		'top_layer' => is_array($outfit['top_layer'] ?? null) ? $outfit['top_layer'] : null,
+		'bottom' => is_array($outfit['bottom'] ?? null) ? $outfit['bottom'] : (is_array($outfit['pantalon'] ?? null) ? $outfit['pantalon'] : null),
+		'shoes' => is_array($outfit['shoes'] ?? null) ? $outfit['shoes'] : null,
+		'extra' => is_array($outfit['extra'] ?? null) ? $outfit['extra'] : null
+	];
+
+	if ($layerPreference === 'forbid') {
+		$removed = is_array($normalized['top_layer']);
+		$normalized['top_layer'] = null;
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'applied' => true,
+			'missing_required_layer' => false,
+			'added_layer' => false,
+			'removed_layer' => $removed
+		];
+	}
+
+	if ($layerPreference !== 'require') {
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'applied' => false,
+			'missing_required_layer' => false,
+			'added_layer' => false,
+			'removed_layer' => false
+		];
+	}
+
+	if (is_array($normalized['top_layer'])) {
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'applied' => true,
+			'missing_required_layer' => false,
+			'added_layer' => false,
+			'removed_layer' => false
+		];
+	}
+
+	$selectedIds = [];
+	foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $slot) {
+		$id = (int)(is_array($normalized[$slot] ?? null) ? ($normalized[$slot]['id_producto'] ?? 0) : 0);
+		if ($id > 0) {
+			$selectedIds[$id] = true;
+		}
+	}
+
+	$pick = pickFromScoredByCategoriesWithStyle(
+		$scored,
+		$slotCategories['top_layer'] ?? [],
+		$selectedIds,
+		$preferredStyle,
+		$requiredColor,
+		$strictColorMode,
+		$excludedStyles
+	);
+
+	if ($pick !== null) {
+		$normalized['top_layer'] = $pick;
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'applied' => true,
+			'missing_required_layer' => false,
+			'added_layer' => true,
+			'removed_layer' => false
+		];
+	}
+
+	return [
+		'outfit' => withPantalonAlias($normalized),
+		'applied' => true,
+		'missing_required_layer' => true,
+		'added_layer' => false,
+		'removed_layer' => false
+	];
+}
+
 function normalizeOutfitToBudget(
 	array $outfit,
 	array $pool,
@@ -1274,6 +1383,7 @@ function callOpenAiStylist(
 	?string $preferredStyle,
 	?array $baseProduct,
 	array $candidatePool,
+	string $layerPreference = '',
 	array $excludedStyles = [],
 	?array &$debug = null
 ): ?array {
@@ -1307,6 +1417,8 @@ function callOpenAiStylist(
 		. "- shoes: categoria Calzado (obligatorio si existe candidata).\n"
 		. "- extra: categoria Gorras (opcional).\n"
 		. "- Si preferred_style viene informado (formal/casual/deportivo), SOLO puedes usar productos de ese estilo. Si para un slot no existe producto de ese estilo, devuelve null en ese slot.\n"
+		. "- Si layer_preference='require', top_layer DEBE ir relleno (si no existe candidata valida, null).\n"
+		. "- Si layer_preference='forbid', top_layer DEBE ser null.\n"
 		. "No inventes productos ni IDs. Devuelve SOLO JSON valido con esta forma:\n"
 		. "{\"reply_text\":\"...\",\"outfit\":{\"top_main\":id|null,\"top_layer\":id|null,\"pantalon\":id|null,\"shoes\":id|null,\"extra\":id|null},\"recommended_ids\":[id1,id2,...]}";
 
@@ -1314,6 +1426,7 @@ function callOpenAiStylist(
 		'message' => $message,
 		'presupuesto' => $presupuesto,
 		'preferred_style' => normalizeStyleValue($preferredStyle),
+		'layer_preference' => $layerPreference,
 		'excluded_styles' => $excludedStyles,
 		'base_product' => $baseInfo,
 		'candidate_products' => $candidatePool,
@@ -1635,6 +1748,7 @@ try {
 		}
 	}
 	$preferredColors = detectColorsFromMessage($message);
+	$layerPreference = detectLayerPreferenceFromMessage($message);
 	$strictColorMode = detectStrictMonochromeIntent($message);
 	$requiredColor = $strictColorMode ? detectPrimaryColorFromMessage($message) : null;
 	if ($strictColorMode && $requiredColor !== null) {
@@ -1785,7 +1899,7 @@ try {
 		for ($try = 1; $try <= 3; $try++) {
 			$openAiAttempts = $try;
 			$openAiDebug = null;
-			$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool, $excludedStyles, $openAiDebug);
+			$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool, $layerPreference, $excludedStyles, $openAiDebug);
 			$openAiLastHttpCode = $openAiDebug['http_code'] ?? null;
 			$openAiLastCurlError = (string)($openAiDebug['curl_error'] ?? '');
 			$openAiLastStage = (string)($openAiDebug['stage'] ?? '');
@@ -1857,6 +1971,22 @@ try {
 	$recommended = $strictEnforcement['recommended_products'];
 	$strictStyleApplied = (bool)($strictEnforcement['applied'] ?? false);
 	$strictStyleRemovedItems = (int)($strictEnforcement['removed_items'] ?? 0);
+	$layerEnforcement = enforceLayerPreferenceOnOutfit(
+		$outfit,
+		$scoredPool,
+		$slotCategories,
+		$preferredStyle,
+		$requiredColor,
+		$strictColorMode,
+		$excludedStyles,
+		$layerPreference
+	);
+	$outfit = $layerEnforcement['outfit'];
+	$recommended = buildRecommendedFromOutfit($outfit);
+	$layerRuleApplied = (bool)($layerEnforcement['applied'] ?? false);
+	$layerRuleMissingRequired = (bool)($layerEnforcement['missing_required_layer'] ?? false);
+	$layerRuleAddedLayer = (bool)($layerEnforcement['added_layer'] ?? false);
+	$layerRuleRemovedLayer = (bool)($layerEnforcement['removed_layer'] ?? false);
 	$outfitTotal = calculateOutfitTotal($outfit);
 	$budgetRespected = $presupuesto === null || $presupuesto <= 0 ? true : ($outfitTotal <= $presupuesto);
 	$diversified = $signatureBeforeDiversity !== $signatureAfterDiversity;
@@ -1882,6 +2012,14 @@ try {
 	if ($strictColorRequested && !empty($missingColorSlots)) {
 		$reply = 'No existe prenda disponible de color ' . normalizeColorValue((string)$requiredColor)
 			. ' para: ' . implode(', ', $missingColorSlots) . '.';
+	}
+
+	if ($layerPreference === 'require' && $layerRuleMissingRequired) {
+		$reply = 'Busque un look de invierno/frio, pero no hay capa superior disponible que cumpla los filtros actuales.';
+	}
+
+	if ($layerPreference === 'forbid') {
+		$reply = 'Prepare un look pensado para verano/calor, sin capa superior.';
 	}
 
 	$openAiStatus = 'openai_ok';
@@ -1936,6 +2074,11 @@ try {
 			'diversified' => $diversified,
 			'strict_style_applied' => $strictStyleApplied,
 			'strict_style_removed_items' => $strictStyleRemovedItems,
+			'layer_preference' => $layerPreference,
+			'layer_rule_applied' => $layerRuleApplied,
+			'layer_rule_missing_required_layer' => $layerRuleMissingRequired,
+			'layer_rule_added_layer' => $layerRuleAddedLayer,
+			'layer_rule_removed_layer' => $layerRuleRemovedLayer,
 			'auto_selected_style' => $autoSelectedStyle,
 			'strict_color_requested' => $strictColorRequested,
 			'strict_color' => $strictColorRequested ? normalizeColorValue((string)$requiredColor) : '',
