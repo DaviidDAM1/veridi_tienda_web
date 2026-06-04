@@ -396,7 +396,17 @@ function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {productos.map((producto) => (
+              {productos.map((producto) => {
+                const stockOptions = Array.isArray(producto.stock_por_talla) && producto.stock_por_talla.length > 0
+                  ? producto.stock_por_talla
+                  : tallas;
+                const selectedStockTalla = stockForm.id_producto === producto.id_producto
+                  ? String(stockForm.id_talla || '')
+                  : String(stockOptions?.[0]?.id_talla || '');
+                const selectedStockRow = stockOptions.find((talla) => String(talla.id_talla) === String(selectedStockTalla));
+                const stockActualSeleccionado = Number(selectedStockRow?.stock || 0);
+
+                return (
                 <tr key={producto.id_producto} style={{ borderTop: '1px solid var(--veridi-border)' }}>
                   <td style={{ padding: 10 }}>{producto.id_producto}</td>
                   <td style={{ padding: 10 }}>{producto.nombre}</td>
@@ -419,16 +429,19 @@ function AdminPage() {
                     <form
                       onSubmit={(e) => {
                         e.preventDefault();
-                        submitAction({ action: 'adjust_stock', id_producto: stockForm.id_producto || producto.id_producto, id_talla: stockForm.id_talla, delta: stockForm.delta }, 'stock');
+                        submitAction({ action: 'adjust_stock', id_producto: producto.id_producto, id_talla: selectedStockTalla, delta: stockForm.delta }, 'stock');
                       }}
                       style={{ display: 'flex', gap: 6, alignItems: 'center' }}
                     >
-                      <input type="hidden" value={stockForm.id_producto || producto.id_producto} />
-                      <select name="id_talla" required value={stockForm.id_talla} onChange={(e) => setStockForm((p) => ({ ...p, id_producto: producto.id_producto, id_talla: e.target.value }))} style={{ padding: 5 }}>
-                        {tallas.map((talla) => (
+                      <input type="hidden" value={producto.id_producto} />
+                      <select name="id_talla" required value={selectedStockTalla} onChange={(e) => setStockForm((p) => ({ ...p, id_producto: producto.id_producto, id_talla: e.target.value }))} style={{ padding: 5 }}>
+                        {stockOptions.map((talla) => (
                           <option key={talla.id_talla} value={talla.id_talla}>{talla.nombre}</option>
                         ))}
                       </select>
+                      <span style={{ fontSize: 12, color: 'var(--veridi-text-secondary)', minWidth: 84 }}>
+                        Actual: {stockActualSeleccionado}
+                      </span>
                       <input
                         type="number"
                         required
@@ -444,7 +457,8 @@ function AdminPage() {
                     </form>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

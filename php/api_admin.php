@@ -189,6 +189,29 @@ function getAdminData(PDO $conexion): array
     ");
     $productos = $stmtProductos->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
+    $stmtStockPorTalla = $conexion->query(
+        "SELECT pt.id_producto, pt.id_talla, t.nombre AS talla_nombre, pt.stock
+         FROM producto_tallas pt
+         INNER JOIN tallas t ON t.id_talla = pt.id_talla
+         ORDER BY pt.id_producto ASC, pt.id_talla ASC"
+    );
+    $stockRows = $stmtStockPorTalla->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    $stockByProduct = [];
+    foreach ($stockRows as $row) {
+        $idProducto = (int)($row['id_producto'] ?? 0);
+        if ($idProducto <= 0) {
+            continue;
+        }
+        if (!isset($stockByProduct[$idProducto])) {
+            $stockByProduct[$idProducto] = [];
+        }
+        $stockByProduct[$idProducto][] = [
+            'id_talla' => (int)($row['id_talla'] ?? 0),
+            'nombre' => (string)($row['talla_nombre'] ?? ''),
+            'stock' => (int)($row['stock'] ?? 0)
+        ];
+    }
+
     $stmtUsuarios = $conexion->query("SELECT id_usuario, nombre, email, password, rol FROM usuarios ORDER BY id_usuario DESC");
     $usuarios = $stmtUsuarios->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -213,15 +236,17 @@ function getAdminData(PDO $conexion): array
                 'nombre' => (string)$item['nombre']
             ];
         }, $tallas),
-        'productos' => array_map(static function ($item) {
+        'productos' => array_map(static function ($item) use ($stockByProduct) {
+            $idProducto = (int)$item['id_producto'];
             return [
-                'id_producto' => (int)$item['id_producto'],
+                'id_producto' => $idProducto,
                 'nombre' => (string)$item['nombre'],
                 'precio' => (float)$item['precio'],
                 'estilo' => (string)$item['estilo'],
                 'categoria' => (string)($item['categoria'] ?? 'Sin categoría'),
                 'oculto' => (int)$item['oculto'],
-                'stock_total' => (int)$item['stock_total']
+                'stock_total' => (int)$item['stock_total'],
+                'stock_por_talla' => $stockByProduct[$idProducto] ?? []
             ];
         }, $productos),
         'usuarios' => array_map(static function ($item) {

@@ -143,10 +143,21 @@ function CartPage() {
                         >
                           {item.available_tallas.map((talla) => (
                             <option key={`${item.item_key}-${talla.id_talla}`} value={talla.id_talla}>
-                              {formatMobileTallaLabel(talla.nombre, isMobile)} (stock {talla.stock})
+                              {formatMobileTallaLabel(talla.nombre, isMobile)} (Disponible)
                             </option>
                           ))}
                         </select>
+                        {(() => {
+                          const tallaActual = (item.available_tallas || []).find(
+                            (talla) => Number(talla.id_talla) === Number(item.id_talla)
+                          );
+                          const stockActual = Number(tallaActual?.stock || 0);
+                          return (
+                            <p style={{ marginTop: 6, marginBottom: 0, fontSize: 13, color: 'var(--veridi-text-secondary)' }}>
+                              {stockActual > 0 && stockActual <= 20 ? 'Queda poco stock. ¡Date prisa!' : 'Stock disponible'}
+                            </p>
+                          );
+                        })()}
                       </div>
                     )}
                     <p><strong>Subtotal:</strong> {Number(item.subtotal).toFixed(2)} €</p>

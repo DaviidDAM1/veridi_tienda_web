@@ -227,7 +227,11 @@ function ProductDetailPage() {
                   ))}
                 </div>
                 <p className="stock-info">
-                  {selectedTallaObj ? `Stock disponible: ${selectedTallaObj.stock}` : 'Selecciona una talla para ver stock'}
+                  {selectedTallaObj
+                    ? (Number(selectedTallaObj.stock || 0) <= 20
+                      ? 'Queda poco stock. ¡Date prisa!'
+                      : 'Stock disponible')
+                    : 'Selecciona una talla para ver disponibilidad'}
                 </p>
               </>
             )}
