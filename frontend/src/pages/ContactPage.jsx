@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { openAuthPanel } from '../utils/auth';
-import Modal from '../components/ui/Modal';
 
 function ContactPage() {
   const [loading, setLoading] = useState(true);
@@ -95,16 +94,23 @@ function ContactPage() {
   const logueado = Boolean(contactoInfo.logueado);
 
   return (
-    <main>
-      <Modal
-        isOpen={showSuccessModal}
-        title="✓ ¡Mensaje Enviado!"
-        message="Tu mensaje ha sido enviado correctamente. Nos pondremos en contacto contigo pronto."
-        onClose={handleCloseModal}
-        buttonText="Aceptar"
-      />
+    <>
+      <div className="modal-overlay" style={{ display: showSuccessModal ? 'block' : 'none' }} onClick={handleCloseModal}></div>
+      <div className="modal-filtro" style={{ display: showSuccessModal ? 'block' : 'none' }}>
+        <div className="modal-header">
+          <h3>✓ ¡Mensaje enviado!</h3>
+          <button className="modal-close" onClick={handleCloseModal}>✕</button>
+        </div>
+        <div className="modal-body" style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--veridi-text)' }}>
+          <p>Tu mensaje ha sido enviado correctamente.<br />Nos pondremos en contacto contigo pronto.</p>
+        </div>
+        <div className="modal-footer" style={{ justifyContent: 'center' }}>
+          <button className="btn-aceptar" onClick={handleCloseModal}>Aceptar</button>
+        </div>
+      </div>
 
-      <section className="contacto-page">
+      <main>
+        <section className="contacto-page">
         <div className="contacto-intro">
           <h1>Contacto</h1>
           <p className="intro-text">
@@ -211,6 +217,7 @@ function ContactPage() {
         </div>
       </section>
     </main>
+    </>
   );
 }
 
