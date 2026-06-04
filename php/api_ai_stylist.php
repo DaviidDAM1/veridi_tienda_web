@@ -82,7 +82,7 @@ function detectStyleFromMessage(string $message): ?string
 		return null;
 	}
 
-	if (preg_match('/gym|gimnasio|deporte|deportivo|entreno|running|correr|sport/', $text)) {
+	if (preg_match('/gym|gimnasio|deporte|deportiv|entreno|running|correr|sport|futbol/', $text)) {
 		return 'deportivo';
 	}
 
@@ -90,7 +90,7 @@ function detectStyleFromMessage(string $message): ?string
 		return 'formal';
 	}
 
-	if (preg_match('/casual|diario|dia a dia|urbano|street|calle/', $text)) {
+	if (preg_match('/casual|informal|diario|dia a dia|urbano|street|calle/', $text)) {
 		return 'casual';
 	}
 
@@ -104,7 +104,7 @@ function normalizeStyleValue(?string $style): string
 		return '';
 	}
 
-	if (preg_match('/gym|gimnasio|deporte|deportivo|entreno|running|correr|sport/', $text)) {
+	if (preg_match('/gym|gimnasio|deporte|deportiv|entreno|running|correr|sport|futbol/', $text)) {
 		return 'deportivo';
 	}
 
@@ -112,7 +112,7 @@ function normalizeStyleValue(?string $style): string
 		return 'formal';
 	}
 
-	if (preg_match('/casual|diario|dia a dia|urbano|street|calle/', $text)) {
+	if (preg_match('/casual|informal|diario|dia a dia|urbano|street|calle/', $text)) {
 		return 'casual';
 	}
 

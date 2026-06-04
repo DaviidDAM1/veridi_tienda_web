@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import { openAuthPanel } from '../utils/auth';
+import Modal from '../components/ui/Modal';
 
 function ContactPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [contactoInfo, setContactoInfo] = useState({
     email_web: 'info@veridi.com',
     logueado: false,
@@ -55,7 +56,7 @@ function ContactPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setSuccess('');
+    setShowSuccessModal(false);
     setError('');
 
     try {
@@ -67,11 +68,16 @@ function ContactPage() {
         return;
       }
 
-      setSuccess(data.message || 'Mensaje enviado correctamente.');
+      setShowSuccessModal(true);
       setForm((prev) => ({ ...prev, tipo: '', mensaje: '' }));
     } catch (err) {
       setError('No se pudo enviar el mensaje.');
+      console.error('Error al enviar contacto:', err);
     }
+  };
+
+  const handleCloseModal = () => {
+    setShowSuccessModal(false);
   };
 
   if (loading) {
@@ -90,6 +96,14 @@ function ContactPage() {
 
   return (
     <main>
+      <Modal
+        isOpen={showSuccessModal}
+        title="✓ ¡Mensaje Enviado!"
+        message="Tu mensaje ha sido enviado correctamente. Nos pondremos en contacto contigo pronto."
+        onClose={handleCloseModal}
+        buttonText="Aceptar"
+      />
+
       <section className="contacto-page">
         <div className="contacto-intro">
           <h1>Contacto</h1>
@@ -103,7 +117,6 @@ function ContactPage() {
           </p>
         </div>
 
-        {success && <div className="success-message">{success}</div>}
         {error && <div className="error-message">{error}</div>}
 
         <div className="contacto-container">

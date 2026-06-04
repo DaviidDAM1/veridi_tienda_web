@@ -23,7 +23,7 @@ if ($origin !== '' && preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?$|^h
 }
 header('Vary: Origin');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, Authorization');
 header('Content-Type: application/json; charset=utf-8');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
@@ -139,6 +139,8 @@ $stmt = $conexion->prepare("INSERT INTO contacto (nombre, email, asunto, mensaje
 $ok = $stmt->execute([$nombre, $email, $tipo, $mensaje]);
 
 if (!$ok) {
+    $errorInfo = $stmt->errorInfo();
+    error_log("Database error in contacto insert: " . print_r($errorInfo, true));
     echo json_encode([
         'ok' => false,
         'message' => '❌ Hubo un error al enviar el mensaje. Intenta de nuevo.'
