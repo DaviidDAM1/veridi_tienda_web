@@ -154,6 +154,21 @@ function detectLayerPreferenceFromMessage(string $message): string
 	return '';
 }
 
+function isShortBottomCandidate(array $producto): bool
+{
+	$categoria = normalizeText((string)($producto['categoria'] ?? ''));
+	if (!in_array($categoria, ['pantalones', 'vaqueros'], true)) {
+		return false;
+	}
+
+	$nombre = normalizeText((string)($producto['nombre'] ?? ''));
+	if ($nombre === '') {
+		return false;
+	}
+
+	return preg_match('/\b(short|bermuda|corto|corta|cortos|cortas)\b/', $nombre) === 1;
+}
+
 function chooseAutoStyleForOutfit(
 	array $scored,
 	array $slotCategories,
@@ -1098,6 +1113,101 @@ function enforceLayerPreferenceOnOutfit(
 	];
 }
 
+function enforceColdWeatherBottomRule(
+	array $outfit,
+	array $scored,
+	array $slotCategories,
+	?string $preferredStyle,
+	?string $requiredColor,
+	bool $strictColorMode,
+	array $excludedStyles,
+	bool $coldWeatherRequested
+): array {
+	$normalized = [
+		'top_main' => is_array($outfit['top_main'] ?? null) ? $outfit['top_main'] : null,
+		'top_layer' => is_array($outfit['top_layer'] ?? null) ? $outfit['top_layer'] : null,
+		'bottom' => is_array($outfit['bottom'] ?? null) ? $outfit['bottom'] : (is_array($outfit['pantalon'] ?? null) ? $outfit['pantalon'] : null),
+		'shoes' => is_array($outfit['shoes'] ?? null) ? $outfit['shoes'] : null,
+		'extra' => is_array($outfit['extra'] ?? null) ? $outfit['extra'] : null
+	];
+
+	if (!$coldWeatherRequested) {
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'applied' => false,
+			'replaced_short' => false,
+			'missing_non_short_bottom' => false
+		];
+	}
+
+	$bottom = $normalized['bottom'];
+	if (!is_array($bottom) || !isShortBottomCandidate($bottom)) {
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'applied' => true,
+			'replaced_short' => false,
+			'missing_non_short_bottom' => false
+		];
+	}
+
+	$selectedIds = [];
+	foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $slot) {
+		$id = (int)(is_array($normalized[$slot] ?? null) ? ($normalized[$slot]['id_producto'] ?? 0) : 0);
+		if ($id > 0) {
+			$selectedIds[$id] = true;
+		}
+	}
+
+	$replacement = null;
+	$preferred = normalizeStyleValue($preferredStyle);
+	foreach ($scored as $candidate) {
+		$idCandidate = (int)($candidate['id_producto'] ?? 0);
+		if ($idCandidate <= 0 || isset($selectedIds[$idCandidate])) {
+			continue;
+		}
+
+		$candidateCategory = normalizeText((string)($candidate['categoria'] ?? ''));
+		if (!in_array($candidateCategory, $slotCategories['bottom'] ?? [], true)) {
+			continue;
+		}
+		if (isShortBottomCandidate($candidate)) {
+			continue;
+		}
+		if (isStyleExcluded($excludedStyles, $candidate)) {
+			continue;
+		}
+		if ($preferred !== '' && !isStyleCompatible($preferred, $candidate)) {
+			continue;
+		}
+		if ($strictColorMode && !isColorCompatible($requiredColor, $candidate)) {
+			continue;
+		}
+
+		$replacement = $candidate;
+		unset($replacement['_score']);
+		break;
+	}
+
+	if ($replacement !== null) {
+		$normalized['bottom'] = $replacement;
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'applied' => true,
+			'replaced_short' => true,
+			'missing_non_short_bottom' => false
+		];
+	}
+
+	$normalized['bottom'] = null;
+
+	return [
+		'outfit' => withPantalonAlias($normalized),
+		'applied' => true,
+		'replaced_short' => false,
+		'missing_non_short_bottom' => true
+	];
+}
+
 function normalizeOutfitToBudget(
 	array $outfit,
 	array $pool,
@@ -1987,6 +2097,22 @@ try {
 	$layerRuleMissingRequired = (bool)($layerEnforcement['missing_required_layer'] ?? false);
 	$layerRuleAddedLayer = (bool)($layerEnforcement['added_layer'] ?? false);
 	$layerRuleRemovedLayer = (bool)($layerEnforcement['removed_layer'] ?? false);
+	$coldWeatherRequested = $layerPreference === 'require';
+	$coldBottomEnforcement = enforceColdWeatherBottomRule(
+		$outfit,
+		$scoredPool,
+		$slotCategories,
+		$preferredStyle,
+		$requiredColor,
+		$strictColorMode,
+		$excludedStyles,
+		$coldWeatherRequested
+	);
+	$outfit = $coldBottomEnforcement['outfit'];
+	$recommended = buildRecommendedFromOutfit($outfit);
+	$coldBottomRuleApplied = (bool)($coldBottomEnforcement['applied'] ?? false);
+	$coldBottomRuleReplacedShort = (bool)($coldBottomEnforcement['replaced_short'] ?? false);
+	$coldBottomRuleMissingNonShort = (bool)($coldBottomEnforcement['missing_non_short_bottom'] ?? false);
 	$outfitTotal = calculateOutfitTotal($outfit);
 	$budgetRespected = $presupuesto === null || $presupuesto <= 0 ? true : ($outfitTotal <= $presupuesto);
 	$diversified = $signatureBeforeDiversity !== $signatureAfterDiversity;
@@ -2020,6 +2146,10 @@ try {
 
 	if ($layerPreference === 'forbid') {
 		$reply = 'Prepare un look pensado para verano/calor, sin capa superior.';
+	}
+
+	if ($coldWeatherRequested && $coldBottomRuleMissingNonShort) {
+		$reply = 'Busque un look de invierno/frio sin pantalones cortos, pero no hay pantalon largo disponible que cumpla los filtros actuales.';
 	}
 
 	$openAiStatus = 'openai_ok';
@@ -2079,6 +2209,9 @@ try {
 			'layer_rule_missing_required_layer' => $layerRuleMissingRequired,
 			'layer_rule_added_layer' => $layerRuleAddedLayer,
 			'layer_rule_removed_layer' => $layerRuleRemovedLayer,
+			'cold_bottom_rule_applied' => $coldBottomRuleApplied,
+			'cold_bottom_rule_replaced_short' => $coldBottomRuleReplacedShort,
+			'cold_bottom_rule_missing_non_short_bottom' => $coldBottomRuleMissingNonShort,
 			'auto_selected_style' => $autoSelectedStyle,
 			'strict_color_requested' => $strictColorRequested,
 			'strict_color' => $strictColorRequested ? normalizeColorValue((string)$requiredColor) : '',
