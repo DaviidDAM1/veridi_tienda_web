@@ -101,7 +101,7 @@ function ContactPage() {
           <h3>✓ ¡Mensaje enviado!</h3>
           <button className="modal-close" onClick={handleCloseModal}>✕</button>
         </div>
-        <div className="modal-body" style={{ textAlign: 'center', padding: '24px 20px', color: 'var(--veridi-text)' }}>
+        <div className="modal-body" style={{ textAlign: 'center', padding: '24px 20px', color: '#fff' }}>
           <p>Tu mensaje ha sido enviado correctamente.<br />Nos pondremos en contacto contigo pronto.</p>
         </div>
         <div className="modal-footer" style={{ justifyContent: 'center' }}>
