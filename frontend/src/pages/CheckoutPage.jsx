@@ -50,7 +50,15 @@ function CheckoutPage() {
     loadCheckout();
   }, []);
 
+  const isCodigoPostalValido = (value) => /^\d{5}$/.test(String(value || ''));
+
   const handleChange = (field, value) => {
+    if (field === 'codigo_postal') {
+      const soloNumeros = String(value).replace(/\D/g, '').slice(0, 5);
+      setForm((prev) => ({ ...prev, [field]: soloNumeros }));
+      return;
+    }
+
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -77,10 +85,22 @@ function CheckoutPage() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+
+    if (!isCodigoPostalValido(form.codigo_postal)) {
+      setError('El código postal debe tener exactamente 5 números.');
+      return;
+    }
+
     setShowConfirmModal(true);
   };
 
   const handleConfirmPayment = () => {
+    if (!isCodigoPostalValido(form.codigo_postal)) {
+      setError('El código postal debe tener exactamente 5 números.');
+      setShowConfirmModal(false);
+      return;
+    }
+
     setShowConfirmModal(false);
     processPayment();
   };
@@ -179,6 +199,10 @@ function CheckoutPage() {
                   required
                   onChange={(e) => handleChange('codigo_postal', e.target.value)}
                   placeholder="Ej: 28001"
+                  inputMode="numeric"
+                  maxLength={5}
+                  pattern="[0-9]{5}"
+                  title="El código postal debe tener exactamente 5 números"
                   style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 6, background: 'var(--veridi-dark)', color: 'var(--veridi-text)', fontSize: 14 }}
                 />
               </div>

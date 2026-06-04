@@ -158,6 +158,11 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
     exit;
 }
 
+if (!preg_match('/^\d{5}$/', $codigoPostal)) {
+    echo json_encode(['ok' => false, 'message' => 'El código postal debe tener exactamente 5 números.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 if (strcasecmp((string)$email, (string)($usuario['email'] ?? '')) !== 0) {
     echo json_encode(['ok' => false, 'message' => 'El email debe coincidir con el de tu cuenta.'], JSON_UNESCAPED_UNICODE);
     exit;
