@@ -69,14 +69,14 @@ $tallasPermitidas = [];
 if (in_array($producto['categoria'], $categoriasRopa, true)) {
     $tallasPermitidas = ['S', 'M', 'L', 'XL'];
 } elseif (in_array($producto['categoria'], $categoriasCalzado, true)) {
-    $tallasPermitidas = ['40', '41', '42', '43', '44', '45'];
+    $tallasPermitidas = ['40', '41', '42'];
 } elseif (in_array($producto['categoria'], $categoriasAccesorios, true)) {
     $tallasPermitidas = ['Única'];
 }
 
 if (!empty($tallasPermitidas)) {
     $placeholders = implode(',', array_fill(0, count($tallasPermitidas), '?'));
-    $stmtTallas = $conexion->prepare("SELECT t.id_talla, t.nombre, pt.stock FROM tallas t INNER JOIN producto_tallas pt ON t.id_talla = pt.id_talla WHERE pt.id_producto = ? AND pt.stock > 0 AND t.nombre IN ($placeholders) ORDER BY CASE WHEN t.nombre = 'Única' THEN 0 WHEN t.nombre IN ('S','M','L','XL') THEN 1 ELSE 2 END, FIELD(t.nombre, 'S','M','L','XL','40','41','42','43','44','45','Única')");
+    $stmtTallas = $conexion->prepare("SELECT t.id_talla, t.nombre, pt.stock FROM tallas t INNER JOIN producto_tallas pt ON t.id_talla = pt.id_talla WHERE pt.id_producto = ? AND pt.stock > 0 AND t.nombre IN ($placeholders) ORDER BY CASE WHEN t.nombre = 'Única' THEN 0 WHEN t.nombre IN ('S','M','L','XL') THEN 1 ELSE 2 END, FIELD(t.nombre, 'S','M','L','XL','40','41','42','Única')");
     $params = array_merge([$idProducto], $tallasPermitidas);
     $stmtTallas->execute($params);
 } else {

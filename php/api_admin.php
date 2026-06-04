@@ -80,6 +80,33 @@ function categoriaEsGorras(PDO $conexion, int $idCategoria): bool
     return mb_strtolower(trim((string)$row['nombre']), 'UTF-8') === 'gorras';
 }
 
+function getTallasPermitidasPorCategoria(PDO $conexion, int $idCategoria): array
+{
+    if ($idCategoria <= 0) {
+        return [];
+    }
+
+    $stmt = $conexion->prepare("SELECT nombre FROM categorias WHERE id_categoria = :id_categoria LIMIT 1");
+    $stmt->bindParam(':id_categoria', $idCategoria, PDO::PARAM_INT);
+    $stmt->execute();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    $nombreCategoria = mb_strtolower(trim((string)($row['nombre'] ?? '')), 'UTF-8');
+
+    if (in_array($nombreCategoria, ['camisetas', 'chaquetas', 'abrigos', 'sudaderas', 'pantalones', 'vaqueros'], true)) {
+        return ['S', 'M', 'L', 'XL'];
+    }
+
+    if ($nombreCategoria === 'calzado') {
+        return ['40', '41', '42'];
+    }
+
+    if ($nombreCategoria === 'gorras') {
+        return ['Única'];
+    }
+
+    return ['Única'];
+}
+
 function procesarImagenProductoAdmin(array $archivo, int $idProducto): string
 {
     if (($archivo['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
@@ -256,7 +283,7 @@ try {
             $estilo = trim((string)($payload['estilo'] ?? 'casual'));
             $material = trim((string)($payload['material'] ?? ''));
             $idCategoria = (int)($payload['id_categoria'] ?? 0);
-            $stockInicial = (int)($payload['stock_inicial'] ?? 0);
+            $stockInicial = 100;
 
             if (categoriaEsGorras($conexion, $idCategoria)) {
                 $estilo = 'casual';
@@ -264,10 +291,6 @@ try {
 
             if ($nombre === '' || $precio <= 0 || $idCategoria <= 0 || !estiloValido($estilo)) {
                 throw new InvalidArgumentException('Datos inválidos al crear producto.');
-            }
-
-            if ($stockInicial < 0) {
-                $stockInicial = 0;
             }
 
             $rutaImagenSubida = '';
@@ -285,8 +308,19 @@ try {
 
             $idProducto = (int)$conexion->lastInsertId();
 
-            $stmtTallas = $conexion->query("SELECT id_talla FROM tallas");
+            $nombresTallasPermitidas = getTallasPermitidasPorCategoria($conexion, $idCategoria);
+            if (empty($nombresTallasPermitidas)) {
+                throw new InvalidArgumentException('No hay tallas configuradas para esta categoría.');
+            }
+
+            $placeholders = implode(',', array_fill(0, count($nombresTallasPermitidas), '?'));
+            $stmtTallas = $conexion->prepare("SELECT id_talla, nombre FROM tallas WHERE nombre IN ($placeholders)");
+            $stmtTallas->execute($nombresTallasPermitidas);
             $tallas = $stmtTallas->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            if (empty($tallas)) {
+                throw new InvalidArgumentException('No se encontraron tallas válidas para esta categoría.');
+            }
 
             $stmtInsertTalla = $conexion->prepare("INSERT INTO producto_tallas (id_producto, id_talla, stock) VALUES (:id_producto, :id_talla, :stock)");
             foreach ($tallas as $talla) {

@@ -175,8 +175,62 @@ foreach ($_SESSION['carrito'] as $item) {
     $total += (float)$item['precio'] * (int)$item['cantidad'];
 }
 
+$carritoAgrupado = [];
+foreach ($_SESSION['carrito'] as $item) {
+    $idProducto = (int)($item['id_producto'] ?? 0);
+    $idTalla = (int)($item['id_talla'] ?? 0);
+    $cantidad = max(0, (int)($item['cantidad'] ?? 0));
+
+    if ($idProducto <= 0 || $idTalla <= 0 || $cantidad <= 0) {
+        continue;
+    }
+
+    $key = $idProducto . '_' . $idTalla;
+    if (!isset($carritoAgrupado[$key])) {
+        $carritoAgrupado[$key] = [
+            'id_producto' => $idProducto,
+            'id_talla' => $idTalla,
+            'cantidad' => 0
+        ];
+    }
+    $carritoAgrupado[$key]['cantidad'] += $cantidad;
+}
+
 try {
     $conexion->beginTransaction();
+
+    $stmtStockForUpdate = $conexion->prepare(
+        "SELECT stock FROM producto_tallas WHERE id_producto = :id_producto AND id_talla = :id_talla LIMIT 1 FOR UPDATE"
+    );
+    $stmtUpdateStock = $conexion->prepare(
+        "UPDATE producto_tallas SET stock = :stock WHERE id_producto = :id_producto AND id_talla = :id_talla"
+    );
+
+    foreach ($carritoAgrupado as $itemStock) {
+        $idProducto = (int)$itemStock['id_producto'];
+        $idTalla = (int)$itemStock['id_talla'];
+        $cantidad = (int)$itemStock['cantidad'];
+
+        $stmtStockForUpdate->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+        $stmtStockForUpdate->bindValue(':id_talla', $idTalla, PDO::PARAM_INT);
+        $stmtStockForUpdate->execute();
+        $rowStock = $stmtStockForUpdate->fetch(PDO::FETCH_ASSOC);
+
+        if (!$rowStock) {
+            throw new RuntimeException('No existe stock configurado para uno de los productos/tallas del carrito.');
+        }
+
+        $stockActual = max(0, (int)$rowStock['stock']);
+        if ($stockActual < $cantidad) {
+            throw new RuntimeException('Stock insuficiente para completar la compra. Revisa tu carrito e inténtalo de nuevo.');
+        }
+
+        $stockNuevo = $stockActual - $cantidad;
+        $stmtUpdateStock->bindValue(':stock', $stockNuevo, PDO::PARAM_INT);
+        $stmtUpdateStock->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+        $stmtUpdateStock->bindValue(':id_talla', $idTalla, PDO::PARAM_INT);
+        $stmtUpdateStock->execute();
+    }
 
     $stmtPedido = $conexion->prepare("INSERT INTO pedidos (id_usuario, direccion, total, estado) VALUES (:id_usuario, :direccion, :total, 'pagado')");
     $stmtPedido->bindParam(':id_usuario', $idUsuario, PDO::PARAM_INT);
@@ -228,8 +282,13 @@ try {
         $conexion->rollBack();
     }
 
+    $message = 'Error al procesar el pago. Inténtalo de nuevo.';
+    if ($e instanceof RuntimeException) {
+        $message = $e->getMessage();
+    }
+
     echo json_encode([
         'ok' => false,
-        'message' => 'Error al procesar el pago. Inténtalo de nuevo.'
+        'message' => $message
     ], JSON_UNESCAPED_UNICODE);
 }
