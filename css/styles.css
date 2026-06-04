@@ -1656,9 +1656,9 @@ header {
 .modal-filtro::-webkit-scrollbar { width: 4px; }
 .modal-filtro::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.4); border-radius: 999px; }
 .modal-header { padding: 22px 24px; border-bottom: 1px solid var(--v-border); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.modal-header h3 { font-size: 18px; color: var(--v-text-strong); margin: 0; font-weight: 700; }
+.modal-header h3 { font-size: 18px; color: #fff; margin: 0; font-weight: 700; }
 .modal-close { background: transparent; border: none; color: var(--v-muted); font-size: 22px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; transition: all 0.2s ease; padding: 0; }
-.modal-close:hover { background: var(--v-surface-2); color: var(--v-text-strong); }
+.modal-close:hover { background: var(--v-surface-2); color: #fff; }
 .modal-body { padding: 22px 24px; }
 .precio-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .input-group { display: flex; flex-direction: column; gap: 8px; }
