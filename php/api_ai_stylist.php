@@ -119,6 +119,123 @@ function normalizeStyleValue(?string $style): string
 	return $text;
 }
 
+function detectExcludedStylesFromMessage(string $message): array
+{
+	$text = normalizeText($message);
+	if ($text === '') {
+		return [];
+	}
+
+	if (preg_match('/salir de noche|de noche|look de noche|outfit de noche|fiesta|discoteca|cita/', $text)) {
+		return ['deportivo'];
+	}
+
+	return [];
+}
+
+function chooseAutoStyleForOutfit(
+	array $scored,
+	array $slotCategories,
+	array $excludedStyles = [],
+	?string $requiredColor = null,
+	bool $strictColorMode = false
+): ?string {
+	$mandatorySlots = ['top_main', 'bottom', 'shoes'];
+	$styleStats = [];
+
+	foreach ($scored as $candidate) {
+		if (!is_array($candidate)) {
+			continue;
+		}
+		if (isStyleExcluded($excludedStyles, $candidate)) {
+			continue;
+		}
+		if ($strictColorMode && !isColorCompatible($requiredColor, $candidate)) {
+			continue;
+		}
+
+		$style = normalizeStyleValue((string)($candidate['estilo'] ?? ''));
+		if ($style === '') {
+			continue;
+		}
+
+		$category = normalizeText((string)($candidate['categoria'] ?? ''));
+		$slot = null;
+		foreach ($slotCategories as $slotName => $allowedCategories) {
+			if (in_array($category, $allowedCategories, true)) {
+				$slot = (string)$slotName;
+				break;
+			}
+		}
+		if ($slot === null) {
+			continue;
+		}
+
+		if (!isset($styleStats[$style])) {
+			$styleStats[$style] = [
+				'mandatory_slots' => [],
+				'total_score' => 0.0,
+				'count' => 0
+			];
+		}
+
+		if (in_array($slot, $mandatorySlots, true)) {
+			$styleStats[$style]['mandatory_slots'][$slot] = true;
+		}
+		$styleStats[$style]['total_score'] += (float)($candidate['_score'] ?? 0);
+		$styleStats[$style]['count']++;
+	}
+
+	if (empty($styleStats)) {
+		return null;
+	}
+
+	$bestStyle = null;
+	$bestMandatoryCovered = -1;
+	$bestScore = -INF;
+	$bestCount = -1;
+
+	foreach ($styleStats as $style => $stats) {
+		$mandatoryCovered = count($stats['mandatory_slots']);
+		$totalScore = (float)$stats['total_score'];
+		$count = (int)$stats['count'];
+
+		if (
+			$bestStyle === null
+			|| $mandatoryCovered > $bestMandatoryCovered
+			|| ($mandatoryCovered === $bestMandatoryCovered && $totalScore > $bestScore)
+			|| ($mandatoryCovered === $bestMandatoryCovered && $totalScore === $bestScore && $count > $bestCount)
+		) {
+			$bestStyle = (string)$style;
+			$bestMandatoryCovered = $mandatoryCovered;
+			$bestScore = $totalScore;
+			$bestCount = $count;
+		}
+	}
+
+	return $bestStyle;
+}
+
+function isStyleExcluded(array $excludedStyles, array $producto): bool
+{
+	if (empty($excludedStyles)) {
+		return false;
+	}
+
+	$productStyle = normalizeStyleValue((string)($producto['estilo'] ?? ''));
+	if ($productStyle === '') {
+		return false;
+	}
+
+	foreach ($excludedStyles as $excludedStyle) {
+		if ($productStyle === normalizeStyleValue((string)$excludedStyle)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 function isStyleCompatible(?string $preferredStyle, array $producto): bool
 {
 	$preferred = normalizeStyleValue($preferredStyle);
@@ -162,6 +279,102 @@ function detectColorsFromMessage(string $message): array
 	}
 
 	return array_keys($colors);
+}
+
+function normalizeColorValue(string $value): string
+{
+	$normalized = normalizeText($value);
+	$map = [
+		'negra' => 'negro',
+		'blanca' => 'blanco',
+		'grisaceo' => 'gris',
+		'grisacea' => 'gris',
+		'azabache' => 'negro',
+		'oscuro' => 'negro',
+		'claro' => 'blanco'
+	];
+
+	return $map[$normalized] ?? $normalized;
+}
+
+function getColorFamilies(): array
+{
+	return [
+		'negro' => ['negro'],
+		'blanco' => ['blanco'],
+		'gris' => ['gris', 'gris claro', 'gris oscuro'],
+		'azul' => ['azul', 'azul claro', 'azul oscuro'],
+		'verde' => ['verde'],
+		'rojo' => ['rojo'],
+		'rosa' => ['rosa'],
+		'beige' => ['beige']
+	];
+}
+
+function detectPrimaryColorFromMessage(string $message): ?string
+{
+	$text = normalizeText($message);
+	if ($text === '') {
+		return null;
+	}
+
+	$positions = [];
+	foreach (array_keys(getColorFamilies()) as $token) {
+		$pos = mb_strpos($text, $token, 0, 'UTF-8');
+		if ($pos !== false) {
+			$positions[] = ['token' => $token, 'pos' => (int)$pos];
+		}
+	}
+
+	if (empty($positions)) {
+		return null;
+	}
+
+	usort($positions, static function ($a, $b) {
+		return ((int)$a['pos']) <=> ((int)$b['pos']);
+	});
+
+	return (string)$positions[0]['token'];
+}
+
+function detectStrictMonochromeIntent(string $message): bool
+{
+	$text = normalizeText($message);
+	if ($text === '') {
+		return false;
+	}
+
+	// Detect requests such as: "entero negro", "completamente negro", "totalmente de color rojo".
+	if (preg_match('/\b(entero|entera|completo|completa|completamente|totalmente|todo|toda)\b/', $text)) {
+		return true;
+	}
+
+	if (preg_match('/\b(de pies a cabeza|monocromatico|monocromatico)\b/', $text)) {
+		return true;
+	}
+
+	return false;
+}
+
+function isColorCompatible(?string $requiredColor, array $producto): bool
+{
+	$required = normalizeColorValue((string)($requiredColor ?? ''));
+	if ($required === '') {
+		return true;
+	}
+
+	$families = getColorFamilies();
+	$allowed = isset($families[$required]) ? $families[$required] : [$required];
+	$allowedNormalized = array_map(static function ($item) {
+		return normalizeText((string)$item);
+	}, $allowed);
+
+	$productColor = normalizeText((string)($producto['color'] ?? ''));
+	if ($productColor === '') {
+		return false;
+	}
+
+	return in_array($productColor, $allowedNormalized, true);
 }
 
 function scoreProducto(
@@ -249,28 +462,36 @@ function pickFromScoredByCategoriesWithStyle(
 	array $scored,
 	array $allowedCategories,
 	array $selectedIds,
-	?string $preferredStyle
+	?string $preferredStyle,
+	?string $requiredColor = null,
+	bool $strictColorMode = false,
+	array $excludedStyles = []
 ): ?array {
 	$preferred = normalizeStyleValue($preferredStyle);
 
-	if ($preferred !== '') {
-		foreach ($scored as $candidate) {
-			$idCandidate = (int)($candidate['id_producto'] ?? 0);
-			if ($idCandidate <= 0 || isset($selectedIds[$idCandidate])) {
-				continue;
-			}
-			$candidateCategory = normalizeText((string)($candidate['categoria'] ?? ''));
-			if (!in_array($candidateCategory, $allowedCategories, true)) {
-				continue;
-			}
-			if (!isStyleCompatible($preferred, $candidate)) {
-				continue;
-			}
-			unset($candidate['_score']);
-			return $candidate;
+	foreach ($scored as $candidate) {
+		$idCandidate = (int)($candidate['id_producto'] ?? 0);
+		if ($idCandidate <= 0 || isset($selectedIds[$idCandidate])) {
+			continue;
 		}
+		$candidateCategory = normalizeText((string)($candidate['categoria'] ?? ''));
+		if (!in_array($candidateCategory, $allowedCategories, true)) {
+			continue;
+		}
+		if (isStyleExcluded($excludedStyles, $candidate)) {
+			continue;
+		}
+		if ($preferred !== '' && !isStyleCompatible($preferred, $candidate)) {
+			continue;
+		}
+		if ($strictColorMode && !isColorCompatible($requiredColor, $candidate)) {
+			continue;
+		}
+		unset($candidate['_score']);
+		return $candidate;
+	}
 
-		// Strict mode: when user asks for a style, do not fallback to other styles.
+	if ($preferred !== '' || $strictColorMode) {
 		return null;
 	}
 
@@ -576,7 +797,7 @@ function buildOutfitSignature(array $outfit): string
 	return implode('-', $parts);
 }
 
-function buildSlotPools(array $pool, array $slotCategories, ?string $preferredStyle = null): array
+function buildSlotPools(array $pool, array $slotCategories, ?string $preferredStyle = null, array $excludedStyles = []): array
 {
 	$poolBySlot = [
 		'top_main' => [],
@@ -600,19 +821,38 @@ function buildSlotPools(array $pool, array $slotCategories, ?string $preferredSt
 	}
 
 	$preferred = normalizeStyleValue($preferredStyle);
-	if ($preferred === '') {
-		return $poolBySlot;
-	}
 
 	foreach ($poolBySlot as $slot => $items) {
 		$matchingStyle = [];
 		foreach ($items as $item) {
-			if (isStyleCompatible($preferred, $item)) {
+			if (isStyleExcluded($excludedStyles, $item)) {
+				continue;
+			}
+			if ($preferred === '' || isStyleCompatible($preferred, $item)) {
 				$matchingStyle[] = $item;
 			}
 		}
 		// Strict mode: keep only requested style, even if slot becomes empty.
 		$poolBySlot[$slot] = array_values($matchingStyle);
+	}
+
+	return $poolBySlot;
+}
+
+function applyStrictColorToSlotPools(array $poolBySlot, ?string $requiredColor, bool $strictColorMode): array
+{
+	if (!$strictColorMode) {
+		return $poolBySlot;
+	}
+
+	foreach ($poolBySlot as $slot => $items) {
+		$filtered = [];
+		foreach ($items as $item) {
+			if (isColorCompatible($requiredColor, $item)) {
+				$filtered[] = $item;
+			}
+		}
+		$poolBySlot[$slot] = array_values($filtered);
 	}
 
 	return $poolBySlot;
@@ -624,7 +864,10 @@ function diversifyOutfitWithHistory(
 	array $slotCategories,
 	?float $budget,
 	bool $mandatoryRequired,
-	?string $preferredStyle
+	?string $preferredStyle,
+	?string $requiredColor = null,
+	bool $strictColorMode = false,
+	array $excludedStyles = []
 ): array
 {
 	$normalized = [
@@ -635,7 +878,8 @@ function diversifyOutfitWithHistory(
 		'extra' => is_array($outfit['extra'] ?? null) ? $outfit['extra'] : null
 	];
 
-	$poolBySlot = buildSlotPools($pool, $slotCategories, $preferredStyle);
+	$poolBySlot = buildSlotPools($pool, $slotCategories, $preferredStyle, $excludedStyles);
+	$poolBySlot = applyStrictColorToSlotPools($poolBySlot, $requiredColor, $strictColorMode);
 	$recentSignatures = isset($_SESSION['ai_stylist_recent_outfits']) && is_array($_SESSION['ai_stylist_recent_outfits'])
 		? $_SESSION['ai_stylist_recent_outfits']
 		: [];
@@ -750,7 +994,10 @@ function normalizeOutfitToBudget(
 	array $pool,
 	array $slotCategories,
 	?float $budget,
-	?string $preferredStyle
+	?string $preferredStyle,
+	?string $requiredColor = null,
+	bool $strictColorMode = false,
+	array $excludedStyles = []
 ): array
 {
 	$normalized = [
@@ -767,7 +1014,8 @@ function normalizeOutfitToBudget(
 		$originalSignature[$slot] = (int)(is_array($normalized[$slot]) ? ($normalized[$slot]['id_producto'] ?? 0) : 0);
 	}
 
-	$poolBySlot = buildSlotPools($pool, $slotCategories, $preferredStyle);
+	$poolBySlot = buildSlotPools($pool, $slotCategories, $preferredStyle, $excludedStyles);
+	$poolBySlot = applyStrictColorToSlotPools($poolBySlot, $requiredColor, $strictColorMode);
 
 	foreach ($poolBySlot as $slot => $items) {
 		usort($items, static function ($a, $b) {
@@ -1026,6 +1274,7 @@ function callOpenAiStylist(
 	?string $preferredStyle,
 	?array $baseProduct,
 	array $candidatePool,
+	array $excludedStyles = [],
 	?array &$debug = null
 ): ?array {
 	$debug = [
@@ -1065,6 +1314,7 @@ function callOpenAiStylist(
 		'message' => $message,
 		'presupuesto' => $presupuesto,
 		'preferred_style' => normalizeStyleValue($preferredStyle),
+		'excluded_styles' => $excludedStyles,
 		'base_product' => $baseInfo,
 		'candidate_products' => $candidatePool,
 		'variation_hint' => (string)microtime(true)
@@ -1135,7 +1385,14 @@ function callOpenAiStylist(
 	return $parsed;
 }
 
-function sanitizeOpenAiStylistResult(array $aiResult, array $candidatePool, ?string $preferredStyle): ?array
+function sanitizeOpenAiStylistResult(
+	array $aiResult,
+	array $candidatePool,
+	?string $preferredStyle,
+	?string $requiredColor = null,
+	bool $strictColorMode = false,
+	array $excludedStyles = []
+): ?array
 {
 	$idMap = [];
 	foreach ($candidatePool as $item) {
@@ -1201,6 +1458,16 @@ function sanitizeOpenAiStylistResult(array $aiResult, array $candidatePool, ?str
 			continue;
 		}
 
+		if (isStyleExcluded($excludedStyles, $idMap[$id])) {
+			$outfitIds[$slot] = null;
+			continue;
+		}
+
+		if ($strictColorMode && !isColorCompatible($requiredColor, $idMap[$id])) {
+			$outfitIds[$slot] = null;
+			continue;
+		}
+
 		$outfitIds[$slot] = $id;
 		$usedIds[$id] = true;
 	}
@@ -1220,6 +1487,12 @@ function sanitizeOpenAiStylistResult(array $aiResult, array $candidatePool, ?str
 			continue;
 		}
 		if ($strictStyle !== '' && !isStyleCompatible($strictStyle, $idMap[$id])) {
+			continue;
+		}
+		if (isStyleExcluded($excludedStyles, $idMap[$id])) {
+			continue;
+		}
+		if ($strictColorMode && !isColorCompatible($requiredColor, $idMap[$id])) {
 			continue;
 		}
 		if (!in_array($id, $recommendedIds, true)) {
@@ -1351,8 +1624,22 @@ try {
 	}
 
 	$messageStyle = detectStyleFromMessage($message);
+	$excludedStyles = detectExcludedStylesFromMessage($message);
 	$preferredStyle = $messageStyle ?: ($baseProduct['estilo'] ?? null);
+	$userExplicitStyle = normalizeStyleValue($messageStyle) !== '';
+	if (!empty($excludedStyles) && $preferredStyle !== null) {
+		$preferredNormalized = normalizeStyleValue($preferredStyle);
+		$excludedNormalized = array_map('normalizeStyleValue', $excludedStyles);
+		if (in_array($preferredNormalized, $excludedNormalized, true)) {
+			$excludedStyles = [];
+		}
+	}
 	$preferredColors = detectColorsFromMessage($message);
+	$strictColorMode = detectStrictMonochromeIntent($message);
+	$requiredColor = $strictColorMode ? detectPrimaryColorFromMessage($message) : null;
+	if ($strictColorMode && $requiredColor !== null) {
+		$preferredColors = [normalizeColorValue($requiredColor)];
+	}
 
 	$scored = [];
 	foreach ($candidates as $candidate) {
@@ -1377,6 +1664,14 @@ try {
 		'extra' => ['gorras']
 	];
 
+	$autoSelectedStyle = null;
+	if (normalizeStyleValue($preferredStyle) === '') {
+		$autoSelectedStyle = chooseAutoStyleForOutfit($scored, $slotCategories, $excludedStyles, $requiredColor, $strictColorMode);
+		if ($autoSelectedStyle !== null) {
+			$preferredStyle = $autoSelectedStyle;
+		}
+	}
+
 	$outfit = [
 		'top_main' => null,
 		'top_layer' => null,
@@ -1398,7 +1693,7 @@ try {
 	}
 
 	if ($outfit['top_main'] === null) {
-		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['top_main'], $selectedIds, $preferredStyle);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['top_main'], $selectedIds, $preferredStyle, $requiredColor, $strictColorMode, $excludedStyles);
 		if ($pick !== null) {
 			$outfit['top_main'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1406,7 +1701,7 @@ try {
 	}
 
 	if ($outfit['top_layer'] === null) {
-		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['top_layer'], $selectedIds, $preferredStyle);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['top_layer'], $selectedIds, $preferredStyle, $requiredColor, $strictColorMode, $excludedStyles);
 		if ($pick !== null) {
 			$outfit['top_layer'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1414,7 +1709,7 @@ try {
 	}
 
 	if ($outfit['bottom'] === null) {
-		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['bottom'], $selectedIds, $preferredStyle);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['bottom'], $selectedIds, $preferredStyle, $requiredColor, $strictColorMode, $excludedStyles);
 		if ($pick !== null) {
 			$outfit['bottom'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1422,7 +1717,7 @@ try {
 	}
 
 	if ($outfit['shoes'] === null) {
-		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['shoes'], $selectedIds, $preferredStyle);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['shoes'], $selectedIds, $preferredStyle, $requiredColor, $strictColorMode, $excludedStyles);
 		if ($pick !== null) {
 			$outfit['shoes'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1430,7 +1725,7 @@ try {
 	}
 
 	if ($outfit['extra'] === null) {
-		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['extra'], $selectedIds, $preferredStyle);
+		$pick = pickFromScoredByCategoriesWithStyle($scored, $slotCategories['extra'], $selectedIds, $preferredStyle, $requiredColor, $strictColorMode, $excludedStyles);
 		if ($pick !== null) {
 			$outfit['extra'] = $pick;
 			$selectedIds[(int)$pick['id_producto']] = true;
@@ -1490,7 +1785,7 @@ try {
 		for ($try = 1; $try <= 3; $try++) {
 			$openAiAttempts = $try;
 			$openAiDebug = null;
-			$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool, $openAiDebug);
+			$aiRaw = callOpenAiStylist($apiKey, $message, $presupuesto, $preferredStyle, $baseProduct, $candidatePool, $excludedStyles, $openAiDebug);
 			$openAiLastHttpCode = $openAiDebug['http_code'] ?? null;
 			$openAiLastCurlError = (string)($openAiDebug['curl_error'] ?? '');
 			$openAiLastStage = (string)($openAiDebug['stage'] ?? '');
@@ -1500,7 +1795,7 @@ try {
 				continue;
 			}
 
-			$aiClean = sanitizeOpenAiStylistResult($aiRaw, $candidatePool, $preferredStyle);
+			$aiClean = sanitizeOpenAiStylistResult($aiRaw, $candidatePool, $preferredStyle, $requiredColor, $strictColorMode, $excludedStyles);
 			if (!is_array($aiClean)) {
 				$openAiLastFailure = 'invalid_or_unsanitizable_payload';
 				continue;
@@ -1545,7 +1840,7 @@ try {
 		}
 	}
 
-	$budgetNormalization = normalizeOutfitToBudget($outfit, $scoredPool, $slotCategories, $presupuesto, $preferredStyle);
+	$budgetNormalization = normalizeOutfitToBudget($outfit, $scoredPool, $slotCategories, $presupuesto, $preferredStyle, $requiredColor, $strictColorMode, $excludedStyles);
 	$outfit = $budgetNormalization['outfit'];
 	$recommended = $budgetNormalization['recommended_products'];
 	$outfitTotal = (float)($budgetNormalization['total'] ?? 0);
@@ -1554,7 +1849,7 @@ try {
 	$mandatoryRequired = (bool)($budgetNormalization['mandatory_required'] ?? false);
 
 	$signatureBeforeDiversity = buildOutfitSignature($outfit);
-	$outfit = diversifyOutfitWithHistory($outfit, $scoredPool, $slotCategories, $presupuesto, $mandatoryRequired, $preferredStyle);
+	$outfit = diversifyOutfitWithHistory($outfit, $scoredPool, $slotCategories, $presupuesto, $mandatoryRequired, $preferredStyle, $requiredColor, $strictColorMode, $excludedStyles);
 	$signatureAfterDiversity = buildOutfitSignature($outfit);
 	$recommended = buildRecommendedFromOutfit($outfit);
 	$strictEnforcement = enforceStrictStyleSelection($outfit, $recommended, $preferredStyle);
@@ -1565,14 +1860,28 @@ try {
 	$outfitTotal = calculateOutfitTotal($outfit);
 	$budgetRespected = $presupuesto === null || $presupuesto <= 0 ? true : ($outfitTotal <= $presupuesto);
 	$diversified = $signatureBeforeDiversity !== $signatureAfterDiversity;
-	$strictStyleRequested = normalizeStyleValue($preferredStyle) !== '';
+	$strictStyleRequested = $userExplicitStyle;
 	$missingMandatoryByStyle =
 		!is_array($outfit['top_main'] ?? null)
 		|| !is_array($outfit['bottom'] ?? null)
 		|| !is_array($outfit['shoes'] ?? null);
+	$strictColorRequested = $strictColorMode && $requiredColor !== null && $requiredColor !== '';
+	$missingColorSlots = [];
+	if ($strictColorRequested) {
+		foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $slot) {
+			if (!is_array($outfit[$slot] ?? null)) {
+				$missingColorSlots[] = mb_strtolower(slotLabel($slot), 'UTF-8');
+			}
+		}
+	}
 
 	if ($strictStyleRequested && $missingMandatoryByStyle) {
 		$reply = 'Aplique filtro estricto por estilo y no hay suficientes prendas disponibles para completar camiseta, pantalon y calzado solo en ese estilo.';
+	}
+
+	if ($strictColorRequested && !empty($missingColorSlots)) {
+		$reply = 'No existe prenda disponible de color ' . normalizeColorValue((string)$requiredColor)
+			. ' para: ' . implode(', ', $missingColorSlots) . '.';
 	}
 
 	$openAiStatus = 'openai_ok';
@@ -1627,8 +1936,13 @@ try {
 			'diversified' => $diversified,
 			'strict_style_applied' => $strictStyleApplied,
 			'strict_style_removed_items' => $strictStyleRemovedItems,
+			'auto_selected_style' => $autoSelectedStyle,
+			'strict_color_requested' => $strictColorRequested,
+			'strict_color' => $strictColorRequested ? normalizeColorValue((string)$requiredColor) : '',
+			'strict_color_missing_slots' => $missingColorSlots,
 			'mandatory_required' => $mandatoryRequired,
 			'preferred_style' => normalizeStyleValue($preferredStyle),
+			'excluded_styles' => $excludedStyles,
 			'used_base_product' => $baseProduct !== null,
 			'used_budget' => $presupuesto !== null && $presupuesto > 0,
 			'message' => $message
