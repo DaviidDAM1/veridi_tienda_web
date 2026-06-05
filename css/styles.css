@@ -1281,6 +1281,53 @@ header {
 .btn-ghost { background: transparent; border: 1px solid var(--v-border); color: var(--v-muted); padding: 10px 20px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; }
 .btn-ghost:hover { background: var(--v-surface-2); color: var(--v-text); border-color: var(--v-border-2); }
 
+/* Fallback hover for interactive controls that still lack a dedicated :hover rule. */
+:where(
+    button,
+    input[type='button'],
+    input[type='submit'],
+    input[type='reset'],
+    a.btn,
+    a[class*='btn-']
+) {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+:where(
+    button,
+    input[type='button'],
+    input[type='submit'],
+    input[type='reset'],
+    a.btn,
+    a[class*='btn-']
+):where(:hover, :focus-visible) {
+    transform: translateY(-1px);
+    filter: brightness(1.02);
+}
+
+:where(
+    button,
+    input[type='button'],
+    input[type='submit'],
+    input[type='reset'],
+    a.btn,
+    a[class*='btn-']
+):active {
+    transform: translateY(0);
+}
+
+:where(
+    button:disabled,
+    input[type='button']:disabled,
+    input[type='submit']:disabled,
+    input[type='reset']:disabled
+) {
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+    cursor: not-allowed;
+}
+
 .badge { background: var(--v-accent); color: #fff; padding: 3px 8px; border-radius: 999px; font-weight: 700; font-size: 0.82rem; }
 
 /* ==========================================
