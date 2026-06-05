@@ -31,6 +31,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+function formatearFechaPedidoMadrid($fechaRaw)
+{
+    $fechaRaw = trim((string)$fechaRaw);
+    if ($fechaRaw === '') {
+        return '';
+    }
+
+    try {
+        // DB timestamp usually arrives without timezone and is stored in UTC.
+        if (preg_match('/(Z|[+\-]\d{2}:?\d{2})$/', $fechaRaw) === 1) {
+            $fecha = new DateTime($fechaRaw);
+        } else {
+            $fecha = DateTime::createFromFormat('Y-m-d H:i:s', $fechaRaw, new DateTimeZone('UTC'));
+            if (!$fecha) {
+                $fecha = new DateTime($fechaRaw, new DateTimeZone('UTC'));
+            }
+        }
+
+        $fecha->setTimezone(new DateTimeZone('Europe/Madrid'));
+        return $fecha->format(DateTime::ATOM);
+    } catch (Exception $e) {
+        return $fechaRaw;
+    }
+}
+
 if (!isset($_SESSION['usuario_id'])) {
     echo json_encode([
         'ok' => false,
@@ -73,7 +98,7 @@ echo json_encode([
     'pedido' => [
         'id_pedido' => (int)$pedido['id_pedido'],
         'total' => (float)$pedido['total'],
-        'fecha' => $pedido['fecha'],
+        'fecha' => formatearFechaPedidoMadrid($pedido['fecha']),
         'estado' => $pedido['estado'],
         'direccion' => $pedido['direccion'],
         'nombre' => $pedido['nombre'] ?? '',
