@@ -71,6 +71,9 @@ function CheckoutPage() {
       const data = response.data;
 
       if (data?.ok && data?.id_pedido) {
+        try {
+          localStorage.removeItem('veridi:catalog-query');
+        } catch (error) {}
         navigate(`/confirmacion/${data.id_pedido}`);
         return;
       }

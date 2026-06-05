@@ -200,6 +200,9 @@ function CartPage() {
             <div className="carrito-resumen">
               <p><strong>Total:</strong> {total.toFixed(2)} €</p>
               <div className="carrito-resumen-acciones">
+                <Link to="/tienda" className="btn-ver" style={{ width: '100%' }}>
+                  ← Volver a la tienda
+                </Link>
                 <Link
                   to="/checkout"
                   className="btn-checkout"

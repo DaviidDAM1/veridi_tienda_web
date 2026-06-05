@@ -7,6 +7,43 @@ import { openAuthPanel } from '../utils/auth';
 import AiStylistChat from '../components/AiStylistChat';
 
 const PRODUCTOS_POR_PAGINA = 16;
+const CATALOG_FILTERS_STORAGE_KEY = 'veridi:catalog-query';
+
+const initialCatalogQuery = {
+  buscar: '',
+  categoria: '',
+  ordenar: '',
+  precio_min: '',
+  precio_max: '',
+  talla: [],
+  color: [],
+  estilo: [],
+  pagina: 1
+};
+
+const loadStoredCatalogQuery = () => {
+  try {
+    const raw = localStorage.getItem(CATALOG_FILTERS_STORAGE_KEY);
+    if (!raw) return { ...initialCatalogQuery };
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return { ...initialCatalogQuery };
+
+    return {
+      ...initialCatalogQuery,
+      buscar: String(parsed.buscar ?? ''),
+      categoria: String(parsed.categoria ?? ''),
+      ordenar: String(parsed.ordenar ?? ''),
+      precio_min: String(parsed.precio_min ?? ''),
+      precio_max: String(parsed.precio_max ?? ''),
+      talla: Array.isArray(parsed.talla) ? parsed.talla.map((x) => String(x)) : [],
+      color: Array.isArray(parsed.color) ? parsed.color.map((x) => String(x)) : [],
+      estilo: Array.isArray(parsed.estilo) ? parsed.estilo.map((x) => String(x)) : [],
+      pagina: Number.isFinite(Number(parsed.pagina)) && Number(parsed.pagina) > 0 ? Number(parsed.pagina) : 1
+    };
+  } catch (error) {
+    return { ...initialCatalogQuery };
+  }
+};
 
 const COLOR_SWATCH_MAP = {
   rojo: '#ef4444',
@@ -101,17 +138,7 @@ function TiendaPage() {
   const [contador, setContador] = useState({ carrito: 0, deseos: 0 });
   const [paginacion, setPaginacion] = useState({ paginaActual: 1, totalPaginas: 1, totalProductos: 0 });
 
-  const [query, setQuery] = useState({
-    buscar: '',
-    categoria: '',
-    ordenar: '',
-    precio_min: '',
-    precio_max: '',
-    talla: [],
-    color: [],
-    estilo: [],
-    pagina: 1
-  });
+  const [query, setQuery] = useState(() => loadStoredCatalogQuery());
   const [selectFiltro, setSelectFiltro] = useState('');
   const [modalFiltro, setModalFiltro] = useState('');
   const [draftPrecioMin, setDraftPrecioMin] = useState('');
@@ -240,6 +267,14 @@ function TiendaPage() {
     return () => controller.abort();
   }, [query]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(CATALOG_FILTERS_STORAGE_KEY, JSON.stringify(query));
+    } catch (error) {
+      // Ignore storage errors (private mode/quota).
+    }
+  }, [query]);
+
   const handleBasicChange = (field, value) => {
     setQuery((prev) => ({ ...prev, [field]: value, pagina: 1 }));
   };
@@ -256,17 +291,7 @@ function TiendaPage() {
   };
 
   const clearFilters = () => {
-    setQuery({
-      buscar: '',
-      categoria: '',
-      ordenar: '',
-      precio_min: '',
-      precio_max: '',
-      talla: [],
-      color: [],
-      estilo: [],
-      pagina: 1
-    });
+    setQuery({ ...initialCatalogQuery });
   };
 
   const opcionesFiltro = {

@@ -263,6 +263,9 @@ function AppLayout({ children }) {
     try {
       await api.post('/php/api_auth_react.php', { action: 'logout' });
     } finally {
+      try {
+        localStorage.removeItem('veridi:catalog-query');
+      } catch (error) {}
       setCurrentUser(null);
       setHistorialPedidos([]);
       setValoracionesUsuario([]);
