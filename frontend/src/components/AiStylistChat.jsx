@@ -3,6 +3,20 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api, { buildBackendAssetUrl } from '../services/api';
 import { useIsMobile } from '../utils/responsive';
 
+const AI_STYLIST_STATE_KEY = 'veridi:ai-stylist-state';
+
+function loadAiStylistState() {
+  try {
+    const raw = localStorage.getItem(AI_STYLIST_STATE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    return parsed;
+  } catch (error) {
+    return {};
+  }
+}
+
 const QUICK_PROMPTS = [
   'Quiero un outfit casual para diario',
   'Recomiendame un look para salir de noche',
@@ -42,16 +56,20 @@ function AiStylistChat() {
   const isMobile = useIsMobile();
   const handledSearchRef = useRef('');
 
-  const [open, setOpen] = useState(false);
-  const [maximized, setMaximized] = useState(false);
-  const [message, setMessage] = useState('');
-  const [presupuesto, setPresupuesto] = useState('');
+  const persistedState = useMemo(() => loadAiStylistState(), []);
+
+  const [open, setOpen] = useState(Boolean(persistedState.open));
+  const [maximized, setMaximized] = useState(Boolean(persistedState.maximized));
+  const [message, setMessage] = useState(String(persistedState.message || ''));
+  const [presupuesto, setPresupuesto] = useState(String(persistedState.presupuesto || ''));
   const [loading, setLoading] = useState(false);
   const [addingOutfit, setAddingOutfit] = useState(false);
   const [addingProductId, setAddingProductId] = useState(0);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [result, setResult] = useState(null);
+  const [notice, setNotice] = useState(String(persistedState.notice || ''));
+  const [result, setResult] = useState(
+    persistedState.result && typeof persistedState.result === 'object' ? persistedState.result : null
+  );
 
   const hasResult = useMemo(() => Boolean(result?.ok), [result]);
   const openAiStatus = useMemo(() => getOpenAiStatusText(result?.meta), [result?.meta]);
@@ -224,6 +242,24 @@ function AiStylistChat() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        AI_STYLIST_STATE_KEY,
+        JSON.stringify({
+          open,
+          maximized,
+          message,
+          presupuesto,
+          notice,
+          result
+        })
+      );
+    } catch (storageError) {
+      // Ignore storage failures (quota/private mode).
+    }
+  }, [open, maximized, message, presupuesto, notice, result]);
 
   useEffect(() => {
     const onEsc = (event) => {

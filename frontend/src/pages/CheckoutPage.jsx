@@ -73,6 +73,7 @@ function CheckoutPage() {
       if (data?.ok && data?.id_pedido) {
         try {
           localStorage.removeItem('veridi:catalog-query');
+          localStorage.removeItem('veridi:ai-stylist-state');
         } catch (error) {}
         navigate(`/confirmacion/${data.id_pedido}`);
         return;

@@ -265,6 +265,7 @@ function AppLayout({ children }) {
     } finally {
       try {
         localStorage.removeItem('veridi:catalog-query');
+        localStorage.removeItem('veridi:ai-stylist-state');
       } catch (error) {}
       setCurrentUser(null);
       setHistorialPedidos([]);
