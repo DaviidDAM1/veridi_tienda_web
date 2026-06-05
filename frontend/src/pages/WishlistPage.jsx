@@ -135,36 +135,41 @@ function WishlistPage() {
         {deseos.length === 0 ? (
           <>
             <p className="carrito-vacio">No tienes productos guardados en tus favoritos.</p>
-            <Link to="/tienda" className="btn-ver">Explorar tienda</Link>
+            <Link to="/tienda" className="btn-ver">Volver a la tienda</Link>
           </>
         ) : (
-          <div className="carrito-lista">
-            {deseos.map((item) => (
-              <article key={item.id_producto} className="carrito-item">
-                <div className="carrito-info">
-                  {item.imagen && (
-                    <img
-                      src={buildBackendAssetUrl(item.imagen)}
-                      alt={item.nombre}
-                      className="wishlist-img"
-                    />
-                  )}
-                  <h3>{item.nombre}</h3>
-                  <p>{Number(item.precio).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
-                </div>
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <Link to="/tienda" className="btn-ver">← Volver a la tienda</Link>
+            </div>
+            <div className="carrito-lista">
+              {deseos.map((item) => (
+                <article key={item.id_producto} className="carrito-item">
+                  <div className="carrito-info">
+                    {item.imagen && (
+                      <img
+                        src={buildBackendAssetUrl(item.imagen)}
+                        alt={item.nombre}
+                        className="wishlist-img"
+                      />
+                    )}
+                    <h3>{item.nombre}</h3>
+                    <p>{Number(item.precio).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+                  </div>
 
-                <div className="carrito-acciones">
-                  <button type="button" className="btn-pagar" onClick={() => handleMoveToCart(item.id_producto)}>
-                    Mover al carrito
-                  </button>
+                  <div className="carrito-acciones">
+                    <button type="button" className="btn-pagar" onClick={() => handleMoveToCart(item.id_producto)}>
+                      Mover al carrito
+                    </button>
 
-                  <button type="button" className="btn-eliminar" onClick={() => handleRemove(item.id_producto)}>
-                    Eliminar
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
+                    <button type="button" className="btn-eliminar" onClick={() => handleRemove(item.id_producto)}>
+                      Eliminar
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </>
         )}
       </section>
     </main>
