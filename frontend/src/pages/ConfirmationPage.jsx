@@ -17,6 +17,14 @@ function ConfirmationPage() {
   const [sending, setSending] = useState(false);
   const [valoracionMsg, setValoracionMsg] = useState('');
 
+  const [productosValorados, setProductosValorados] = useState({});
+  const [modalProductoOpen, setModalProductoOpen] = useState(false);
+  const [productoAValorar, setProductoAValorar] = useState({ id_producto: 0, nombre: '' });
+  const [estrellasProducto, setEstrellasProducto] = useState(0);
+  const [comentarioProducto, setComentarioProducto] = useState('');
+  const [sendingProducto, setSendingProducto] = useState(false);
+  const [valoracionProductoMsg, setValoracionProductoMsg] = useState('');
+
   const numeroPedido = useMemo(() => {
     if (!pedido) return '';
     return String(pedido.id_pedido).padStart(6, '0');
@@ -43,6 +51,12 @@ function ConfirmationPage() {
         setPedido(data.pedido);
         setDetalles(data.detalles || []);
         setYaValoro(Boolean(data.valoracion?.yaValoro));
+        const idsValorados = Array.isArray(data.valoraciones_producto_usuario) ? data.valoraciones_producto_usuario : [];
+        const mapValorados = {};
+        idsValorados.forEach((idProducto) => {
+          mapValorados[Number(idProducto)] = true;
+        });
+        setProductosValorados(mapValorados);
       } catch (err) {
         setError('No se pudo cargar la confirmación de pedido.');
       } finally {
@@ -82,6 +96,53 @@ function ConfirmationPage() {
       setValoracionMsg('No se pudo guardar la valoración.');
     } finally {
       setSending(false);
+    }
+  };
+
+  const openModalValoracionProducto = (detalle) => {
+    setValoracionProductoMsg('');
+    setEstrellasProducto(0);
+    setComentarioProducto('');
+    setProductoAValorar({
+      id_producto: Number(detalle?.id_producto || 0),
+      nombre: String(detalle?.producto_nombre || 'Producto')
+    });
+    setModalProductoOpen(true);
+  };
+
+  const handleEnviarValoracionProducto = async (event) => {
+    event.preventDefault();
+    if (estrellasProducto < 1 || estrellasProducto > 5) {
+      setValoracionProductoMsg('Selecciona entre 1 y 5 estrellas para este producto.');
+      return;
+    }
+
+    setSendingProducto(true);
+    setValoracionProductoMsg('');
+    try {
+      const response = await api.post('/php/api_valoracion_producto.php', {
+        id_pedido: Number(id),
+        id_producto: Number(productoAValorar.id_producto),
+        estrellas: estrellasProducto,
+        comentario: comentarioProducto
+      });
+      const data = response.data;
+
+      if (!data?.ok) {
+        setValoracionProductoMsg(data?.message || 'No se pudo guardar la valoración del producto.');
+        return;
+      }
+
+      setProductosValorados((prev) => ({
+        ...prev,
+        [Number(productoAValorar.id_producto)]: true
+      }));
+      setModalProductoOpen(false);
+      setValoracionMsg('¡Gracias! Tu valoración del producto se guardó correctamente.');
+    } catch (err) {
+      setValoracionProductoMsg('No se pudo guardar la valoración del producto.');
+    } finally {
+      setSendingProducto(false);
     }
   };
 
@@ -164,6 +225,24 @@ function ConfirmationPage() {
                     <p style={{ color: 'var(--veridi-text-muted)', margin: 0, fontSize: 13 }}>
                       Talla: <strong>{detalle.talla_nombre}</strong> | Cantidad: <strong>{detalle.cantidad}</strong>
                     </p>
+                    <button
+                      type="button"
+                      onClick={() => openModalValoracionProducto(detalle)}
+                      disabled={!Number(detalle.id_producto) || Boolean(productosValorados[Number(detalle.id_producto)])}
+                      style={{
+                        marginTop: 10,
+                        background: 'transparent',
+                        color: 'var(--veridi-gold)',
+                        border: '1px solid var(--veridi-gold)',
+                        borderRadius: 6,
+                        padding: '8px 12px',
+                        fontWeight: 700,
+                        cursor: !Number(detalle.id_producto) || Boolean(productosValorados[Number(detalle.id_producto)]) ? 'not-allowed' : 'pointer',
+                        opacity: !Number(detalle.id_producto) || Boolean(productosValorados[Number(detalle.id_producto)]) ? 0.6 : 1
+                      }}
+                    >
+                      {Boolean(productosValorados[Number(detalle.id_producto)]) ? 'producto ya valorado' : 'valora este producto'}
+                    </button>
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <p style={{ color: 'var(--veridi-gold-light)', fontWeight: 700, margin: 0 }}>€{Number(detalle.precio_unitario).toFixed(2)}</p>
@@ -266,6 +345,54 @@ function ConfirmationPage() {
               <button type="submit" disabled={sending} style={{ background: 'linear-gradient(135deg, var(--veridi-gold-dark) 0%, var(--veridi-gold) 100%)', color: 'var(--veridi-black)', padding: '12px 22px', border: 0, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
                 {sending ? 'Enviando...' : 'Enviar valoración'}
               </button>
+            </form>
+          </div>
+        </>
+      )}
+
+      {modalProductoOpen && (
+        <>
+          <div onClick={() => setModalProductoOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 9998 }}></div>
+          <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 'min(92vw, 560px)', background: 'var(--veridi-surface)', border: '2px solid var(--veridi-gold)', borderRadius: 12, padding: 24, zIndex: 9999, boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}>
+            <button type="button" onClick={() => setModalProductoOpen(false)} style={{ position: 'absolute', top: 12, right: 14, background: 'transparent', border: 'none', color: 'var(--veridi-text)', fontSize: 24, cursor: 'pointer' }}>&times;</button>
+            <h2 style={{ margin: '0 0 8px 0', color: 'var(--veridi-gold)' }}>Valora este producto</h2>
+            <p style={{ margin: '0 0 6px 0', color: 'var(--veridi-text)', fontWeight: 700 }}>{productoAValorar.nombre}</p>
+            <p style={{ margin: '0 0 18px 0', color: 'var(--veridi-text-secondary)' }}>Selecciona de 1 a 5 estrellas y añade un comentario opcional.</p>
+
+            <form onSubmit={handleEnviarValoracionProducto} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: 8, color: 'var(--veridi-text)', fontWeight: 600 }}>Estrellas *</label>
+                <div style={{ display: 'flex', gap: 8, fontSize: 30 }}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setEstrellasProducto(star)}
+                      style={{ background: 'transparent', border: 0, cursor: 'pointer', color: star <= estrellasProducto ? 'var(--veridi-gold)' : '#6b6b6b', lineHeight: 1 }}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: 8, color: 'var(--veridi-text)', fontWeight: 600 }}>Mensaje (opcional)</label>
+                <textarea
+                  rows={4}
+                  maxLength={500}
+                  value={comentarioProducto}
+                  onChange={(e) => setComentarioProducto(e.target.value)}
+                  placeholder="Cuéntanos qué te pareció el producto"
+                  style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 8, background: 'var(--veridi-dark)', color: 'var(--veridi-text)' }}
+                />
+              </div>
+
+              <button type="submit" disabled={sendingProducto} style={{ background: 'linear-gradient(135deg, var(--veridi-gold-dark) 0%, var(--veridi-gold) 100%)', color: 'var(--veridi-black)', padding: '12px 22px', border: 0, borderRadius: 8, fontWeight: 700, cursor: 'pointer' }}>
+                {sendingProducto ? 'Enviando...' : 'Enviar valoración'}
+              </button>
+
+              {valoracionProductoMsg && <div className={valoracionProductoMsg.includes('Gracias') ? 'success-message' : 'error-message'}>{valoracionProductoMsg}</div>}
             </form>
           </div>
         </>
