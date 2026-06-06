@@ -71,7 +71,8 @@ function loadCartFromDb(PDO $conexion, int $idUsuario): array
          FROM carrito_detalle cd
          INNER JOIN productos p ON p.id_producto = cd.id_producto
          WHERE cd.id_carrito = :id_carrito
-           AND (p.oculto = 0 OR p.oculto IS NULL)"
+                     AND (p.oculto = 0 OR p.oculto IS NULL)
+                 ORDER BY cd.id_detalle ASC"
     );
     $stmt->bindValue(':id_carrito', $idCarrito, PDO::PARAM_INT);
     $stmt->execute();
@@ -150,6 +151,29 @@ function persistSessionCartToDb(PDO $conexion): void
         $carrito = [];
     }
     saveCartToDb($conexion, $idUsuario, $carrito);
+}
+
+function replaceSessionCartItemKey(string $oldKey, string $newKey, array $newItem): void
+{
+    if ($oldKey === $newKey) {
+        $_SESSION['carrito'][$oldKey] = $newItem;
+        return;
+    }
+
+    $reordered = [];
+    foreach ($_SESSION['carrito'] as $key => $item) {
+        if ($key === $oldKey) {
+            $reordered[$newKey] = $newItem;
+        } elseif ($key !== $newKey) {
+            $reordered[$key] = $item;
+        }
+    }
+
+    if (!array_key_exists($newKey, $reordered)) {
+        $reordered[$newKey] = $newItem;
+    }
+
+    $_SESSION['carrito'] = $reordered;
 }
 
 function outputCart(PDO $conexion): void
@@ -398,23 +422,36 @@ switch ($action) {
         $moveQty = min($oldQty, $capacity);
 
         $sourceItem = $_SESSION['carrito'][$itemKey];
-        if (!isset($_SESSION['carrito'][$newItemKey])) {
-            $_SESSION['carrito'][$newItemKey] = [
-                'id_producto' => $idProducto,
-                'id_talla' => $newIdTalla,
-                'nombre' => (string)($sourceItem['nombre'] ?? 'Producto'),
-                'precio' => (float)($sourceItem['precio'] ?? 0),
-                'imagen' => (string)($sourceItem['imagen'] ?? ''),
-                'cantidad' => $moveQty
-            ];
-        } else {
-            $_SESSION['carrito'][$newItemKey]['cantidad'] = $destQty + $moveQty;
+        $newItem = [
+            'id_producto' => $idProducto,
+            'id_talla' => $newIdTalla,
+            'nombre' => (string)($sourceItem['nombre'] ?? 'Producto'),
+            'precio' => (float)($sourceItem['precio'] ?? 0),
+            'imagen' => (string)($sourceItem['imagen'] ?? ''),
+            'cantidad' => $destQty + $moveQty
+        ];
+
+        $remainingQty = $oldQty - $moveQty;
+        $carritoReordenado = [];
+        foreach ($_SESSION['carrito'] as $key => $item) {
+            if ($key === $itemKey) {
+                if ($remainingQty > 0) {
+                    $item['cantidad'] = $remainingQty;
+                    $carritoReordenado[$itemKey] = $item;
+                }
+
+                $carritoReordenado[$newItemKey] = $newItem;
+                continue;
+            }
+
+            if ($key === $newItemKey) {
+                continue;
+            }
+
+            $carritoReordenado[$key] = $item;
         }
 
-        $_SESSION['carrito'][$itemKey]['cantidad'] = $oldQty - $moveQty;
-        if ((int)$_SESSION['carrito'][$itemKey]['cantidad'] <= 0) {
-            unset($_SESSION['carrito'][$itemKey]);
-        }
+        $_SESSION['carrito'] = $carritoReordenado;
         persistSessionCartToDb($conexion);
         break;
 
