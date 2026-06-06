@@ -31,6 +31,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+function ensureValoracionesProductoSchema(PDO $conexion): void
+{
+    $conexion->exec(
+        "CREATE TABLE IF NOT EXISTS valoraciones_producto (
+            id_valoracion_producto INT AUTO_INCREMENT PRIMARY KEY,
+            id_usuario INT NOT NULL,
+            id_producto INT NOT NULL,
+            id_pedido INT NULL,
+            estrellas TINYINT NOT NULL,
+            comentario TEXT NULL,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT chk_valoracion_producto_estrellas CHECK (estrellas BETWEEN 1 AND 5),
+            UNIQUE KEY uk_valoracion_producto_usuario_producto (id_usuario, id_producto),
+            INDEX idx_valoracion_producto_producto (id_producto),
+            INDEX idx_valoracion_producto_fecha (fecha),
+            CONSTRAINT fk_valoracion_producto_usuario FOREIGN KEY (id_usuario)
+                REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+            CONSTRAINT fk_valoracion_producto_producto FOREIGN KEY (id_producto)
+                REFERENCES productos(id_producto) ON DELETE CASCADE,
+            CONSTRAINT fk_valoracion_producto_pedido FOREIGN KEY (id_pedido)
+                REFERENCES pedidos(id_pedido) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+}
+
 function formatearFechaPedidoMadrid($fechaRaw)
 {
     $fechaRaw = trim((string)$fechaRaw);
@@ -71,6 +96,8 @@ if ($idPedido <= 0) {
     exit;
 }
 
+ensureValoracionesProductoSchema($conexion);
+
 $stmt = $conexion->prepare("SELECT p.id_pedido, p.total, p.fecha, p.estado, p.direccion, u.nombre, u.email FROM pedidos p LEFT JOIN usuarios u ON p.id_usuario = u.id_usuario WHERE p.id_pedido = :id AND p.id_usuario = :id_usuario");
 $stmt->bindParam(':id', $idPedido, PDO::PARAM_INT);
 $stmt->bindParam(':id_usuario', $_SESSION['usuario_id'], PDO::PARAM_INT);
@@ -86,6 +113,29 @@ $stmtDetalle = $conexion->prepare("SELECT pd.id_detalle, pd.cantidad, pd.precio_
 $stmtDetalle->bindParam(':id', $idPedido, PDO::PARAM_INT);
 $stmtDetalle->execute();
 $detalles = $stmtDetalle->fetchAll(PDO::FETCH_ASSOC);
+
+$valoracionesProductoUsuario = [];
+$productosPedido = [];
+foreach ($detalles as $d) {
+    $idProductoDetalle = (int)($d['id_producto'] ?? 0);
+    if ($idProductoDetalle > 0) {
+        $productosPedido[$idProductoDetalle] = true;
+    }
+}
+
+if (!empty($productosPedido)) {
+    $ids = array_keys($productosPedido);
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    $stmtProdRated = $conexion->prepare(
+        "SELECT id_producto
+         FROM valoraciones_producto
+         WHERE id_usuario = ? AND id_producto IN ($placeholders)"
+    );
+    $stmtProdRated->execute(array_merge([(int)$_SESSION['usuario_id']], $ids));
+    while ($row = $stmtProdRated->fetch(PDO::FETCH_ASSOC)) {
+        $valoracionesProductoUsuario[] = (int)$row['id_producto'];
+    }
+}
 
 $stmtValor = $conexion->prepare("SELECT id_valoracion FROM valoraciones WHERE id_pedido = :id_pedido AND id_usuario = :id_usuario LIMIT 1");
 $stmtValor->bindParam(':id_pedido', $idPedido, PDO::PARAM_INT);
@@ -116,5 +166,6 @@ echo json_encode([
     }, $detalles),
     'valoracion' => [
         'yaValoro' => $yaValoro
-    ]
+    ],
+    'valoraciones_producto_usuario' => $valoracionesProductoUsuario
 ], JSON_UNESCAPED_UNICODE);

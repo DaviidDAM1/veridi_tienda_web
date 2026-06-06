@@ -32,6 +32,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+function ensureValoracionesProductoSchema(PDO $conexion): void
+{
+    $conexion->exec(
+        "CREATE TABLE IF NOT EXISTS valoraciones_producto (
+            id_valoracion_producto INT AUTO_INCREMENT PRIMARY KEY,
+            id_usuario INT NOT NULL,
+            id_producto INT NOT NULL,
+            id_pedido INT NULL,
+            estrellas TINYINT NOT NULL,
+            comentario TEXT NULL,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT chk_valoracion_producto_estrellas CHECK (estrellas BETWEEN 1 AND 5),
+            UNIQUE KEY uk_valoracion_producto_usuario_producto (id_usuario, id_producto),
+            INDEX idx_valoracion_producto_producto (id_producto),
+            INDEX idx_valoracion_producto_fecha (fecha),
+            CONSTRAINT fk_valoracion_producto_usuario FOREIGN KEY (id_usuario)
+                REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+            CONSTRAINT fk_valoracion_producto_producto FOREIGN KEY (id_producto)
+                REFERENCES productos(id_producto) ON DELETE CASCADE,
+            CONSTRAINT fk_valoracion_producto_pedido FOREIGN KEY (id_pedido)
+                REFERENCES pedidos(id_pedido) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+}
+
 function limpiarNombreProducto(string $nombre): string
 {
     $sinFormal = preg_replace('/\bformal\b/i', '', $nombre);
@@ -45,6 +70,8 @@ if ($idProducto <= 0) {
     echo json_encode(['ok' => false, 'message' => 'ID de producto inválido']);
     exit;
 }
+
+ensureValoracionesProductoSchema($conexion);
 
 $stmt = $conexion->prepare("SELECT p.*, c.nombre AS categoria FROM productos p LEFT JOIN categorias c ON p.id_categoria = c.id_categoria WHERE p.id_producto = :id AND (p.oculto = 0 OR p.oculto IS NULL)");
 $stmt->bindParam(':id', $idProducto, PDO::PARAM_INT);
@@ -92,6 +119,27 @@ $stmtRelacionados->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
 $stmtRelacionados->execute();
 $relacionados = $stmtRelacionados->fetchAll(PDO::FETCH_ASSOC);
 
+$stmtRatingsResumen = $conexion->prepare(
+    "SELECT COUNT(*) AS total, AVG(estrellas) AS promedio
+     FROM valoraciones_producto
+     WHERE id_producto = :id_producto"
+);
+$stmtRatingsResumen->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
+$stmtRatingsResumen->execute();
+$ratingsResumen = $stmtRatingsResumen->fetch(PDO::FETCH_ASSOC) ?: ['total' => 0, 'promedio' => null];
+
+$stmtRatings = $conexion->prepare(
+    "SELECT vp.id_valoracion_producto, vp.estrellas, vp.comentario, vp.fecha, u.nombre
+     FROM valoraciones_producto vp
+     INNER JOIN usuarios u ON u.id_usuario = vp.id_usuario
+     WHERE vp.id_producto = :id_producto
+     ORDER BY vp.fecha DESC
+     LIMIT 30"
+);
+$stmtRatings->bindParam(':id_producto', $idProducto, PDO::PARAM_INT);
+$stmtRatings->execute();
+$ratings = $stmtRatings->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
 $esFavorito = false;
 if (isset($_SESSION['deseos']) && is_array($_SESSION['deseos'])) {
     foreach ($_SESSION['deseos'] as $fav) {
@@ -132,6 +180,21 @@ echo json_encode([
     'producto' => $productoOut,
     'tallas' => $tallas,
     'relacionados' => $relacionadosOut,
+    'valoraciones_producto' => [
+        'resumen' => [
+            'total' => (int)($ratingsResumen['total'] ?? 0),
+            'promedio' => isset($ratingsResumen['promedio']) ? (float)$ratingsResumen['promedio'] : 0
+        ],
+        'items' => array_map(static function ($row) {
+            return [
+                'id_valoracion_producto' => (int)$row['id_valoracion_producto'],
+                'nombre_usuario' => (string)($row['nombre'] ?? 'Usuario'),
+                'estrellas' => (int)$row['estrellas'],
+                'comentario' => (string)($row['comentario'] ?? ''),
+                'fecha' => (string)$row['fecha']
+            ];
+        }, $ratings)
+    ],
     'usuario' => [
         'logueado' => isset($_SESSION['usuario_id']),
         'id' => isset($_SESSION['usuario_id']) ? (int)$_SESSION['usuario_id'] : null,

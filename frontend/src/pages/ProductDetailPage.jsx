@@ -19,6 +19,8 @@ function ProductDetailPage() {
   const [producto, setProducto] = useState(null);
   const [tallas, setTallas] = useState([]);
   const [relacionados, setRelacionados] = useState([]);
+  const [valoracionesProducto, setValoracionesProducto] = useState({ resumen: { total: 0, promedio: 0 }, items: [] });
+  const [showValoraciones, setShowValoraciones] = useState(false);
   const [usuario, setUsuario] = useState({ logueado: false, esFavorito: false });
   const [selectedTalla, setSelectedTalla] = useState(null);
 
@@ -37,6 +39,7 @@ function ProductDetailPage() {
         setProducto(data.producto);
         setTallas(data.tallas || []);
         setRelacionados(data.relacionados || []);
+        setValoracionesProducto(data.valoraciones_producto || { resumen: { total: 0, promedio: 0 }, items: [] });
         setUsuario(data.usuario || { logueado: false, esFavorito: false });
       } catch (err) {
         setError('No se pudo cargar el detalle del producto.');
@@ -251,7 +254,43 @@ function ProductDetailPage() {
             >
               ✨ Crear outfit con esta prenda
             </button>
+
+            <button
+              type="button"
+              className="btn-ver-valoraciones"
+              onClick={() => setShowValoraciones((prev) => !prev)}
+            >
+              {showValoraciones ? '▲ Ocultar valoraciones' : `🗣️ Ver valoraciones (${Number(valoracionesProducto?.resumen?.total || 0)})`}
+            </button>
           </div>
+
+          {showValoraciones && (
+            <div className="valoraciones-producto-panel">
+              <div className="valoraciones-producto-resumen">
+                <strong>{Number(valoracionesProducto?.resumen?.promedio || 0).toFixed(1)} / 5</strong>
+                <span>basado en {Number(valoracionesProducto?.resumen?.total || 0)} valoraciones</span>
+              </div>
+
+              {Array.isArray(valoracionesProducto?.items) && valoracionesProducto.items.length > 0 ? (
+                <div className="valoraciones-producto-lista">
+                  {valoracionesProducto.items.map((item) => (
+                    <article className="valoracion-item" key={item.id_valoracion_producto}>
+                      <div className="valoracion-item-top">
+                        <p className="valoracion-autor">{item.nombre_usuario}</p>
+                        <p className="valoracion-fecha">{new Date(item.fecha).toLocaleDateString('es-ES')}</p>
+                      </div>
+                      <p className="valoracion-estrellas">{'★'.repeat(Math.max(0, Math.min(5, Number(item.estrellas || 0))))}</p>
+                      {String(item.comentario || '').trim() !== '' && (
+                        <p className="valoracion-comentario">{item.comentario}</p>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <p className="valoracion-vacio">Este producto aún no tiene valoraciones.</p>
+              )}
+            </div>
+          )}
 
           {cartMessage && <div className={cartMessage.includes('✓') ? 'success-message' : 'error-message'} style={{ marginTop: 12 }}>{cartMessage}</div>}
 
