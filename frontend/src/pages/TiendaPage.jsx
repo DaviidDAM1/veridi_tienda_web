@@ -148,6 +148,8 @@ function TiendaPage() {
   const [favMessage, setFavMessage] = useState('');
   const { showToast } = useToast();
 
+  const formatPrice = (value) => Number(value || 0).toFixed(2);
+
   const filtrosActivos = useMemo(() => {
     const activos = [];
     if (query.precio_min || query.precio_max) {
@@ -570,7 +572,14 @@ function TiendaPage() {
                     <img src={buildBackendAssetUrl(producto.imagen)} alt={producto.nombre} className="producto-img" />
                     <h3>{producto.nombre}</h3>
                     <p>{producto.descripcion}</p>
-                    <p className="precio">{Number(producto.precio).toFixed(2)} €</p>
+                    {producto.en_oferta && Number(producto.precio_original) > Number(producto.precio) ? (
+                      <p className="precio">
+                        <span style={{ textDecoration: 'line-through', opacity: 0.75, marginRight: 8 }}>{formatPrice(producto.precio_original)} €</span>
+                        <span style={{ color: '#c92a2a', fontWeight: 700 }}>{formatPrice(producto.precio)} €</span>
+                      </p>
+                    ) : (
+                      <p className="precio">{formatPrice(producto.precio)} €</p>
+                    )}
                     <div className="botones-card">
                       <Link className="btn-anadir" to={`/producto/${producto.id_producto}`}>Ver producto</Link>
                       <button

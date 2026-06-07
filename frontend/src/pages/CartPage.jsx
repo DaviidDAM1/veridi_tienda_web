@@ -13,6 +13,7 @@ function CartPage() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [working, setWorking] = useState(false);
+  const formatPrice = (value) => Number(value || 0).toFixed(2);
 
   const hasItems = useMemo(() => items.length > 0, [items]);
 
@@ -119,7 +120,14 @@ function CartPage() {
                         style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4, marginBottom: 8 }}
                       />
                     )}
-                    <p>{Number(item.precio).toFixed(2)} € unidad</p>
+                    {item.en_oferta && Number(item.precio_original) > Number(item.precio) ? (
+                      <p>
+                        <span style={{ textDecoration: 'line-through', opacity: 0.75, marginRight: 8 }}>{formatPrice(item.precio_original)} €</span>
+                        <span style={{ color: '#c92a2a', fontWeight: 700 }}>{formatPrice(item.precio)} € unidad</span>
+                      </p>
+                    ) : (
+                      <p>{formatPrice(item.precio)} € unidad</p>
+                    )}
                     {item.talla_nombre && <p><strong>Talla actual:</strong> {item.talla_nombre}</p>}
                     {Array.isArray(item.available_tallas) && item.available_tallas.length > 0 && (
                       <div className="carrito-talla-selector">
@@ -160,7 +168,7 @@ function CartPage() {
                         })()}
                       </div>
                     )}
-                    <p><strong>Subtotal:</strong> {Number(item.subtotal).toFixed(2)} €</p>
+                    <p><strong>Subtotal:</strong> {formatPrice(item.subtotal)} €</p>
                   </div>
 
                   <div className="carrito-acciones">
@@ -198,7 +206,7 @@ function CartPage() {
             </div>
 
             <div className="carrito-resumen">
-              <p><strong>Total:</strong> {total.toFixed(2)} €</p>
+              <p><strong>Total:</strong> {formatPrice(total)} €</p>
               <div className="carrito-resumen-acciones">
                 <Link to="/tienda" className="btn-ver" style={{ width: '100%' }}>
                   ← Volver a la tienda

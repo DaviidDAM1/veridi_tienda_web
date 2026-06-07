@@ -1,6 +1,7 @@
 <?php
 require_once "../config/conexion.php";
 require_once "../config/imagenes.php";
+require_once "../config/ofertas.php";
 
 if (PHP_SESSION_NONE === session_status()) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -70,10 +71,14 @@ function loadDeseosFromDb(PDO $conexion, int $idUsuario): array
             continue;
         }
         $nombre = (string)($row['nombre'] ?? 'Producto');
+        $pricing = veridiCalcularPrecioOferta($nombre, (float)($row['precio'] ?? 0));
         $out[$idProducto] = [
             'id_producto' => $idProducto,
             'nombre' => $nombre,
-            'precio' => (float)($row['precio'] ?? 0),
+            'precio' => (float)$pricing['precio'],
+            'precio_original' => $pricing['precio_original'] !== null ? (float)$pricing['precio_original'] : null,
+            'descuento_porcentaje' => (float)$pricing['descuento_porcentaje'],
+            'en_oferta' => (bool)$pricing['en_oferta'],
             'imagen' => obtenerImagenProducto($idProducto, $nombre)
         ];
     }
@@ -118,6 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             'id_producto' => (int)($item['id_producto'] ?? 0),
             'nombre' => (string)($item['nombre'] ?? 'Producto'),
             'precio' => (float)($item['precio'] ?? 0),
+            'precio_original' => isset($item['precio_original']) && $item['precio_original'] !== null ? (float)$item['precio_original'] : null,
+            'descuento_porcentaje' => (float)($item['descuento_porcentaje'] ?? 0),
+            'en_oferta' => (bool)($item['en_oferta'] ?? false),
             'imagen' => (string)($item['imagen'] ?? '')
         ];
     }, $dbDeseos));
@@ -167,9 +175,26 @@ if ($idProducto <= 0) {
 
 switch ($action) {
     case 'add': {
-        $nombre = trim((string)($payload['nombre'] ?? 'Producto'));
-        $precio = (float)($payload['precio'] ?? 0);
-        $imagen = trim((string)($payload['imagen'] ?? ''));
+        $stmtProducto = $conexion->prepare(
+            "SELECT id_producto, nombre, precio
+             FROM productos
+             WHERE id_producto = :id_producto
+               AND (oculto = 0 OR oculto IS NULL)
+             LIMIT 1"
+        );
+        $stmtProducto->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+        $stmtProducto->execute();
+        $producto = $stmtProducto->fetch(PDO::FETCH_ASSOC);
+
+        if (!$producto) {
+            jsonResponse([
+                'ok' => false,
+                'message' => 'Producto no disponible.'
+            ], 404);
+        }
+
+        $nombre = trim((string)($producto['nombre'] ?? 'Producto'));
+        $pricing = veridiCalcularPrecioOferta($nombre, (float)($producto['precio'] ?? 0));
 
         $stmtUpsert = $conexion->prepare(
             "INSERT INTO deseos_usuario (id_usuario, id_producto)
@@ -183,8 +208,11 @@ switch ($action) {
         $_SESSION['deseos'][$idProducto] = [
             'id_producto' => $idProducto,
             'nombre' => $nombre,
-            'precio' => $precio,
-            'imagen' => $imagen !== '' ? $imagen : obtenerImagenProducto($idProducto, $nombre)
+            'precio' => (float)$pricing['precio'],
+            'precio_original' => $pricing['precio_original'] !== null ? (float)$pricing['precio_original'] : null,
+            'descuento_porcentaje' => (float)$pricing['descuento_porcentaje'],
+            'en_oferta' => (bool)$pricing['en_oferta'],
+            'imagen' => obtenerImagenProducto($idProducto, $nombre)
         ];
 
         jsonResponse([

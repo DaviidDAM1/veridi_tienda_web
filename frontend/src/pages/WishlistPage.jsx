@@ -11,6 +11,7 @@ function WishlistPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [deseos, setDeseos] = useState([]);
+  const formatPrice = (value) => Number(value || 0).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const loadDeseos = async () => {
     setLoading(true);
@@ -154,7 +155,14 @@ function WishlistPage() {
                       />
                     )}
                     <h3>{item.nombre}</h3>
-                    <p>{Number(item.precio).toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</p>
+                    {item.en_oferta && Number(item.precio_original) > Number(item.precio) ? (
+                      <p>
+                        <span style={{ textDecoration: 'line-through', opacity: 0.75, marginRight: 8 }}>{formatPrice(item.precio_original)} €</span>
+                        <span style={{ color: '#c92a2a', fontWeight: 700 }}>{formatPrice(item.precio)} €</span>
+                      </p>
+                    ) : (
+                      <p>{formatPrice(item.precio)} €</p>
+                    )}
                   </div>
 
                   <div className="carrito-acciones">

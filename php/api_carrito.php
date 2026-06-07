@@ -1,6 +1,7 @@
 <?php
 require_once "../config/conexion.php";
 require_once "../config/imagenes.php";
+require_once "../config/ofertas.php";
 
 if (PHP_SESSION_NONE === session_status()) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -63,6 +64,36 @@ function getOrCreateCartId(PDO $conexion, int $idUsuario): int
     return (int)$conexion->lastInsertId();
 }
 
+function getProductoSnapshot(PDO $conexion, int $idProducto): ?array
+{
+    $stmt = $conexion->prepare(
+        "SELECT id_producto, nombre, precio
+         FROM productos
+         WHERE id_producto = :id_producto
+           AND (oculto = 0 OR oculto IS NULL)
+         LIMIT 1"
+    );
+    $stmt->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+    $stmt->execute();
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        return null;
+    }
+
+    $nombre = (string)($row['nombre'] ?? 'Producto');
+    $pricing = veridiCalcularPrecioOferta($nombre, (float)($row['precio'] ?? 0));
+
+    return [
+        'id_producto' => (int)$row['id_producto'],
+        'nombre' => $nombre,
+        'precio' => (float)$pricing['precio'],
+        'precio_original' => $pricing['precio_original'] !== null ? (float)$pricing['precio_original'] : null,
+        'descuento_porcentaje' => (float)$pricing['descuento_porcentaje'],
+        'en_oferta' => (bool)$pricing['en_oferta'],
+        'imagen' => obtenerImagenProducto((int)$row['id_producto'], $nombre)
+    ];
+}
+
 function loadCartFromDb(PDO $conexion, int $idUsuario): array
 {
     $idCarrito = getOrCreateCartId($conexion, $idUsuario);
@@ -86,11 +117,16 @@ function loadCartFromDb(PDO $conexion, int $idUsuario): array
         }
         $key = $idProducto . '_' . $idTalla;
         $nombre = (string)($row['nombre'] ?? 'Producto');
+        $nombre = (string)($row['nombre'] ?? 'Producto');
+        $pricing = veridiCalcularPrecioOferta($nombre, (float)($row['precio'] ?? 0));
         $items[$key] = [
             'id_producto' => $idProducto,
             'id_talla' => $idTalla,
             'nombre' => $nombre,
-            'precio' => (float)($row['precio'] ?? 0),
+            'precio' => (float)$pricing['precio'],
+            'precio_original' => $pricing['precio_original'] !== null ? (float)$pricing['precio_original'] : null,
+            'descuento_porcentaje' => (float)$pricing['descuento_porcentaje'],
+            'en_oferta' => (bool)$pricing['en_oferta'],
             'imagen' => obtenerImagenProducto($idProducto, $nombre),
             'cantidad' => max(1, (int)($row['cantidad'] ?? 1))
         ];
@@ -250,6 +286,9 @@ function outputCart(PDO $conexion): void
             'id_talla' => $idTalla,
             'nombre' => (string)($item['nombre'] ?? 'Producto'),
             'precio' => $precio,
+            'precio_original' => isset($item['precio_original']) && $item['precio_original'] !== null ? (float)$item['precio_original'] : null,
+            'descuento_porcentaje' => (float)($item['descuento_porcentaje'] ?? 0),
+            'en_oferta' => (bool)($item['en_oferta'] ?? false),
             'cantidad' => $cantidad,
             'imagen' => (string)($item['imagen'] ?? ''),
             'subtotal' => $subtotal,
@@ -323,17 +362,25 @@ switch ($action) {
             exit;
         }
 
-        $nombre = trim((string)($payload['nombre'] ?? 'Producto'));
-        $precio = (float)($payload['precio'] ?? 0);
-        $imagen = trim((string)($payload['imagen'] ?? ''));
+        $producto = getProductoSnapshot($conexion, $idProducto);
+        if (!$producto) {
+            echo json_encode([
+                'ok' => false,
+                'message' => 'Producto no disponible.'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
 
         if (!isset($_SESSION['carrito'][$itemKey])) {
             $_SESSION['carrito'][$itemKey] = [
                 'id_producto' => $idProducto,
                 'id_talla' => $idTalla,
-                'nombre' => $nombre,
-                'precio' => $precio,
-                'imagen' => $imagen,
+                'nombre' => (string)$producto['nombre'],
+                'precio' => (float)$producto['precio'],
+                'precio_original' => $producto['precio_original'],
+                'descuento_porcentaje' => (float)$producto['descuento_porcentaje'],
+                'en_oferta' => (bool)$producto['en_oferta'],
+                'imagen' => (string)$producto['imagen'],
                 'cantidad' => 1
             ];
         } else {
@@ -427,6 +474,9 @@ switch ($action) {
             'id_talla' => $newIdTalla,
             'nombre' => (string)($sourceItem['nombre'] ?? 'Producto'),
             'precio' => (float)($sourceItem['precio'] ?? 0),
+            'precio_original' => isset($sourceItem['precio_original']) && $sourceItem['precio_original'] !== null ? (float)$sourceItem['precio_original'] : null,
+            'descuento_porcentaje' => (float)($sourceItem['descuento_porcentaje'] ?? 0),
+            'en_oferta' => (bool)($sourceItem['en_oferta'] ?? false),
             'imagen' => (string)($sourceItem['imagen'] ?? ''),
             'cantidad' => $destQty + $moveQty
         ];
@@ -493,11 +543,11 @@ switch ($action) {
             exit;
         }
 
-        $stmtProduct = $conexion->prepare(
-            "SELECT id_producto, nombre, precio FROM productos
-             WHERE id_producto = :id_producto AND (oculto = 0 OR oculto IS NULL)
-             LIMIT 1"
-        );
+          $stmtProduct = $conexion->prepare(
+          "SELECT id_producto FROM productos
+           WHERE id_producto = :id_producto AND (oculto = 0 OR oculto IS NULL)
+           LIMIT 1"
+       );
         $stmtSize = $conexion->prepare(
             "SELECT id_talla, stock FROM producto_tallas
              WHERE id_producto = :id_producto AND stock > 0
@@ -510,6 +560,11 @@ switch ($action) {
             $stmtProduct->execute();
             $producto = $stmtProduct->fetch(PDO::FETCH_ASSOC);
             if (!$producto) {
+                continue;
+            }
+
+            $productoSnapshot = getProductoSnapshot($conexion, $idProductoOutfit);
+            if (!$productoSnapshot) {
                 continue;
             }
 
@@ -530,11 +585,14 @@ switch ($action) {
 
             if (!isset($_SESSION['carrito'][$itemKeyOutfit])) {
                 $_SESSION['carrito'][$itemKeyOutfit] = [
-                    'id_producto' => (int)$producto['id_producto'],
+                    'id_producto' => (int)$productoSnapshot['id_producto'],
                     'id_talla' => $idTallaOutfit,
-                    'nombre' => (string)$producto['nombre'],
-                    'precio' => (float)$producto['precio'],
-                    'imagen' => obtenerImagenProducto((int)$producto['id_producto'], (string)$producto['nombre']),
+                    'nombre' => (string)$productoSnapshot['nombre'],
+                    'precio' => (float)$productoSnapshot['precio'],
+                    'precio_original' => $productoSnapshot['precio_original'],
+                    'descuento_porcentaje' => (float)$productoSnapshot['descuento_porcentaje'],
+                    'en_oferta' => (bool)$productoSnapshot['en_oferta'],
+                    'imagen' => (string)$productoSnapshot['imagen'],
                     'cantidad' => 1
                 ];
             } else {

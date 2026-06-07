@@ -1,6 +1,7 @@
 <?php
 require_once "../config/conexion.php";
 require_once "../config/imagenes.php";
+require_once "../config/ofertas.php";
 
 if (PHP_SESSION_NONE === session_status()) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -102,6 +103,7 @@ $ordenar = trim($_GET['ordenar'] ?? '');
 
 $whereParts = ['(p.oculto = 0 OR p.oculto IS NULL)'];
 $params = [];
+$precioOfertaSql = "CASE WHEN p.nombre = 'Gorra Roja Veridi' THEN GREATEST(ROUND(p.precio * 0.60, 2), 0.01) ELSE p.precio END";
 
 if ($buscar !== '') {
     $whereParts[] = 'p.nombre LIKE :buscar';
@@ -114,12 +116,12 @@ if ($categoria > 0) {
 }
 
 if ($precioMin !== null) {
-    $whereParts[] = 'p.precio >= :precio_min';
+    $whereParts[] = $precioOfertaSql . ' >= :precio_min';
     $params[':precio_min'] = $precioMin;
 }
 
 if ($precioMax !== null) {
-    $whereParts[] = 'p.precio <= :precio_max';
+    $whereParts[] = $precioOfertaSql . ' <= :precio_max';
     $params[':precio_max'] = $precioMax;
 }
 
@@ -170,10 +172,10 @@ switch ($ordenar) {
         $ordenamiento = 'ORDER BY p.nombre DESC';
         break;
     case 'precio_asc':
-        $ordenamiento = 'ORDER BY p.precio ASC';
+        $ordenamiento = 'ORDER BY ' . $precioOfertaSql . ' ASC';
         break;
     case 'precio_desc':
-        $ordenamiento = 'ORDER BY p.precio DESC';
+        $ordenamiento = 'ORDER BY ' . $precioOfertaSql . ' DESC';
         break;
 }
 
@@ -221,6 +223,7 @@ if (!empty($_SESSION['deseos']) && is_array($_SESSION['deseos'])) {
 }
 
 $productosOut = array_map(static function ($producto) use ($deseosIds) {
+    $producto = veridiAplicarOfertaProducto($producto);
     $idProducto = (int)$producto['id_producto'];
     $nombreLimpio = limpiarNombreProducto((string)($producto['nombre'] ?? ''));
     return [
@@ -228,6 +231,9 @@ $productosOut = array_map(static function ($producto) use ($deseosIds) {
         'nombre' => $nombreLimpio,
         'descripcion' => $producto['descripcion'],
         'precio' => (float)$producto['precio'],
+        'precio_original' => isset($producto['precio_original']) ? (float)$producto['precio_original'] : null,
+        'descuento_porcentaje' => (float)($producto['descuento_porcentaje'] ?? 0),
+        'en_oferta' => (bool)($producto['en_oferta'] ?? false),
         'categoria' => $producto['categoria'],
         'imagen' => obtenerImagenProducto($idProducto, $nombreLimpio),
         'es_favorito' => isset($deseosIds[$idProducto])

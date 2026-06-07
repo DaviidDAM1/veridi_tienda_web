@@ -23,6 +23,7 @@ function ProductDetailPage() {
   const [showValoraciones, setShowValoraciones] = useState(false);
   const [usuario, setUsuario] = useState({ logueado: false, esFavorito: false });
   const [selectedTalla, setSelectedTalla] = useState(null);
+  const formatPrice = (value) => Number(value || 0).toFixed(2);
 
   useEffect(() => {
     const fetchDetalle = async () => {
@@ -191,7 +192,14 @@ function ProductDetailPage() {
           <h1>{producto.nombre}</h1>
 
           <div className="detalle-precio">
-            <span className="precio-grande">{Number(producto.precio).toFixed(2)} €</span>
+            {producto.en_oferta && Number(producto.precio_original) > Number(producto.precio) ? (
+              <>
+                <span className="precio-grande" style={{ textDecoration: 'line-through', opacity: 0.75, marginRight: 10 }}>{formatPrice(producto.precio_original)} €</span>
+                <span className="precio-grande" style={{ color: '#c92a2a' }}>{formatPrice(producto.precio)} €</span>
+              </>
+            ) : (
+              <span className="precio-grande">{formatPrice(producto.precio)} €</span>
+            )}
           </div>
 
           <div className="detalle-descripcion">
@@ -310,7 +318,14 @@ function ProductDetailPage() {
               <div className="card-relacionado" key={prod.id_producto}>
                 <img src={buildBackendAssetUrl(prod.imagen)} alt={prod.nombre} className="producto-img-rel" />
                 <h4>{prod.nombre}</h4>
-                <p className="precio-rel">{Number(prod.precio).toFixed(2)} €</p>
+                {prod.en_oferta && Number(prod.precio_original) > Number(prod.precio) ? (
+                  <p className="precio-rel">
+                    <span style={{ textDecoration: 'line-through', opacity: 0.75, marginRight: 8 }}>{formatPrice(prod.precio_original)} €</span>
+                    <span style={{ color: '#c92a2a', fontWeight: 700 }}>{formatPrice(prod.precio)} €</span>
+                  </p>
+                ) : (
+                  <p className="precio-rel">{formatPrice(prod.precio)} €</p>
+                )}
                 <Link to={`/producto/${prod.id_producto}`} className="btn-ver-relacionado">Ver producto</Link>
               </div>
             ))}

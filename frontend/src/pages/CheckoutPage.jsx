@@ -19,6 +19,7 @@ function CheckoutPage() {
     codigo_postal: '',
     pais: ''
   });
+  const formatPrice = (value) => Number(value || 0).toFixed(2);
 
   const loadCheckout = async () => {
     setLoading(true);
@@ -242,14 +243,22 @@ function CheckoutPage() {
                   <div>
                     <p style={{ color: 'var(--veridi-text)', margin: '0 0 5px 0', fontWeight: 600 }}>{item.nombre}</p>
                     <p style={{ color: 'var(--veridi-text-muted)', margin: 0, fontSize: 14 }}>Talla: {item.talla} | Cantidad: {item.cantidad}</p>
+                    {item.en_oferta && Number(item.precio_original) > Number(item.precio) ? (
+                      <p style={{ color: 'var(--veridi-text-muted)', margin: '4px 0 0 0', fontSize: 13 }}>
+                        <span style={{ textDecoration: 'line-through', opacity: 0.75, marginRight: 8 }}>€{formatPrice(item.precio_original)}</span>
+                        <span style={{ color: '#c92a2a', fontWeight: 700 }}>€{formatPrice(item.precio)} unidad</span>
+                      </p>
+                    ) : (
+                      <p style={{ color: 'var(--veridi-text-muted)', margin: '4px 0 0 0', fontSize: 13 }}>€{formatPrice(item.precio)} unidad</p>
+                    )}
                   </div>
-                  <p style={{ color: 'var(--veridi-gold-light)', fontWeight: 700 }}>€{Number(item.subtotal).toFixed(2)}</p>
+                  <p style={{ color: 'var(--veridi-gold-light)', fontWeight: 700 }}>€{formatPrice(item.subtotal)}</p>
                 </div>
               ))}
 
               <div style={{ padding: '20px 0', borderTop: '2px solid var(--veridi-gold)', marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <p style={{ color: 'var(--veridi-gold)', fontWeight: 700, fontSize: 18, margin: 0 }}>Total:</p>
-                <p style={{ color: 'var(--veridi-gold)', fontWeight: 700, fontSize: 24, margin: 0 }}>€{Number(checkout.total).toFixed(2)}</p>
+                <p style={{ color: 'var(--veridi-gold)', fontWeight: 700, fontSize: 24, margin: 0 }}>€{formatPrice(checkout.total)}</p>
               </div>
             </div>
           </div>

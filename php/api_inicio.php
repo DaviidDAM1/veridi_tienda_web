@@ -1,6 +1,7 @@
 <?php
 require_once "../config/conexion.php";
 require_once "../config/imagenes.php";
+require_once "../config/ofertas.php";
 
 if (PHP_SESSION_NONE === session_status()) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -45,18 +46,6 @@ function limpiarNombreProducto(string $nombre): string
     return trim((string)$sinEspaciosDobles);
 }
 
-function aplicarDescuentoOferta(array $producto, float $descuento): array
-{
-    $precioOriginal = (float)($producto['precio'] ?? 0);
-    $precioConOferta = max(0.01, round($precioOriginal - $descuento, 2));
-
-    $producto['precio_original'] = $precioOriginal;
-    $producto['precio'] = $precioConOferta;
-    $producto['descuento'] = $descuento;
-
-    return $producto;
-}
-
 $stmt = $conexion->query("SELECT p.id_producto, p.nombre, p.descripcion, p.precio, p.fecha_creacion, COALESCE(SUM(pd.cantidad), 0) AS total_vendido FROM productos p LEFT JOIN pedido_detalle pd ON pd.id_producto = p.id_producto WHERE (p.oculto = 0 OR p.oculto IS NULL) GROUP BY p.id_producto, p.nombre, p.descripcion, p.precio, p.fecha_creacion");
 $productos = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
@@ -73,6 +62,7 @@ if (empty($productos)) {
 }
 
 $normalizar = static function (array $producto): array {
+    $producto = veridiAplicarOfertaProducto($producto);
     $id = (int)$producto['id_producto'];
     $nombreLimpio = limpiarNombreProducto((string)($producto['nombre'] ?? ''));
     return [
@@ -81,7 +71,8 @@ $normalizar = static function (array $producto): array {
         'descripcion' => (string)($producto['descripcion'] ?? ''),
         'precio' => (float)$producto['precio'],
         'precio_original' => isset($producto['precio_original']) ? (float)$producto['precio_original'] : null,
-        'descuento' => isset($producto['descuento']) ? (float)$producto['descuento'] : null,
+        'descuento_porcentaje' => (float)($producto['descuento_porcentaje'] ?? 0),
+        'en_oferta' => (bool)($producto['en_oferta'] ?? false),
         'imagen' => obtenerImagenProducto($id, $nombreLimpio)
     ];
 };
@@ -124,11 +115,10 @@ if ($nuevo) {
 
 $oferta = null;
 $nombreOfertaForzada = 'Gorra Roja Veridi';
-$descuentoOfertaForzada = 40.0;
 
 foreach ($productos as $item) {
     if (strcasecmp(trim((string)($item['nombre'] ?? '')), $nombreOfertaForzada) === 0) {
-        $oferta = aplicarDescuentoOferta($item, $descuentoOfertaForzada);
+        $oferta = veridiAplicarOfertaProducto($item);
         break;
     }
 }

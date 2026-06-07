@@ -1,5 +1,6 @@
 <?php
 require_once "../config/conexion.php";
+require_once "../config/ofertas.php";
 
 if (PHP_SESSION_NONE === session_status()) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -70,17 +71,30 @@ function getCheckoutData(PDO $conexion): array
 
     foreach ($carrito as $item) {
         $cantidad = (int)($item['cantidad'] ?? 0);
-        $precio = (float)($item['precio'] ?? 0);
+        $idProducto = (int)($item['id_producto'] ?? 0);
+        $stmtPrecio = $conexion->prepare("SELECT nombre, precio FROM productos WHERE id_producto = :id_producto AND (oculto = 0 OR oculto IS NULL) LIMIT 1");
+        $stmtPrecio->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+        $stmtPrecio->execute();
+        $producto = $stmtPrecio->fetch(PDO::FETCH_ASSOC);
+        if (!$producto) {
+            continue;
+        }
+
+        $pricing = veridiCalcularPrecioOferta((string)($producto['nombre'] ?? ''), (float)($producto['precio'] ?? 0));
+        $precio = (float)$pricing['precio'];
         $subtotal = $precio * $cantidad;
         $total += $subtotal;
 
         $idTalla = (int)($item['id_talla'] ?? 0);
         $items[] = [
-            'id_producto' => (int)($item['id_producto'] ?? 0),
+            'id_producto' => $idProducto,
             'id_talla' => $idTalla,
-            'nombre' => (string)($item['nombre'] ?? 'Producto'),
+            'nombre' => (string)($producto['nombre'] ?? 'Producto'),
             'cantidad' => $cantidad,
             'precio' => $precio,
+            'precio_original' => $pricing['precio_original'] !== null ? (float)$pricing['precio_original'] : null,
+            'descuento_porcentaje' => (float)$pricing['descuento_porcentaje'],
+            'en_oferta' => (bool)$pricing['en_oferta'],
             'subtotal' => $subtotal,
             'talla' => $tallasNombres[$idTalla] ?? 'N/A'
         ];
@@ -170,9 +184,40 @@ if (strcasecmp((string)$email, (string)($usuario['email'] ?? '')) !== 0) {
 
 $idUsuario = (int)$usuario['id_usuario'];
 $direccion = $calle . ', ' . $codigoPostal . ' ' . $ciudad . ', ' . $pais;
-$total = 0;
+$carritoConPrecio = [];
+$total = 0.0;
 foreach ($_SESSION['carrito'] as $item) {
-    $total += (float)$item['precio'] * (int)$item['cantidad'];
+    $idProducto = (int)($item['id_producto'] ?? 0);
+    $idTalla = (int)($item['id_talla'] ?? 0);
+    $cantidad = max(0, (int)($item['cantidad'] ?? 0));
+
+    if ($idProducto <= 0 || $idTalla <= 0 || $cantidad <= 0) {
+        continue;
+    }
+
+    $stmtPrecio = $conexion->prepare("SELECT nombre, precio FROM productos WHERE id_producto = :id_producto AND (oculto = 0 OR oculto IS NULL) LIMIT 1");
+    $stmtPrecio->bindValue(':id_producto', $idProducto, PDO::PARAM_INT);
+    $stmtPrecio->execute();
+    $producto = $stmtPrecio->fetch(PDO::FETCH_ASSOC);
+    if (!$producto) {
+        continue;
+    }
+
+    $pricing = veridiCalcularPrecioOferta((string)($producto['nombre'] ?? ''), (float)($producto['precio'] ?? 0));
+    $precioFinal = (float)$pricing['precio'];
+    $total += $precioFinal * $cantidad;
+
+    $carritoConPrecio[] = [
+        'id_producto' => $idProducto,
+        'id_talla' => $idTalla,
+        'cantidad' => $cantidad,
+        'precio' => $precioFinal
+    ];
+}
+
+if (empty($carritoConPrecio)) {
+    echo json_encode(['ok' => false, 'message' => 'No hay productos validos en el carrito.'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 $carritoAgrupado = [];
@@ -242,7 +287,7 @@ try {
 
     $stmtDetalle = $conexion->prepare("INSERT INTO pedido_detalle (id_pedido, id_producto, id_talla, cantidad, precio_unitario) VALUES (:id_pedido, :id_producto, :id_talla, :cantidad, :precio_unitario)");
 
-    foreach ($_SESSION['carrito'] as $item) {
+    foreach ($carritoConPrecio as $item) {
         $idProducto = (int)($item['id_producto'] ?? 0);
         $idTalla = (int)($item['id_talla'] ?? 0);
         $cantidad = (int)($item['cantidad'] ?? 0);

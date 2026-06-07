@@ -1,6 +1,7 @@
 <?php
 require_once "../config/conexion.php";
 require_once "../config/imagenes.php";
+require_once "../config/ofertas.php";
 
 if (PHP_SESSION_NONE === session_status()) {
     $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -163,13 +164,19 @@ $productoOut = [
     'imagen' => obtenerImagenProducto($idProducto, limpiarNombreProducto((string)($producto['nombre'] ?? '')))
 ];
 
+$productoOut = veridiAplicarOfertaProducto($productoOut);
+
 $relacionadosOut = array_map(static function ($prod) {
+    $prod = veridiAplicarOfertaProducto($prod);
     $idRel = (int)$prod['id_producto'];
     $nombreLimpio = limpiarNombreProducto((string)($prod['nombre'] ?? ''));
     return [
         'id_producto' => $idRel,
         'nombre' => $nombreLimpio,
         'precio' => (float)$prod['precio'],
+        'precio_original' => isset($prod['precio_original']) ? (float)$prod['precio_original'] : null,
+        'descuento_porcentaje' => (float)($prod['descuento_porcentaje'] ?? 0),
+        'en_oferta' => (bool)($prod['en_oferta'] ?? false),
         'descripcion' => $prod['descripcion'] ?? '',
         'imagen' => obtenerImagenProducto($idRel, $nombreLimpio)
     ];
