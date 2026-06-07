@@ -55,6 +55,8 @@ function HomePage() {
     ];
   }, [destacados]);
 
+  const formatPrice = (value) => Number(value || 0).toFixed(2);
+
   return (
     <main>
       <div className="hero-section">
@@ -101,7 +103,14 @@ function HomePage() {
               <h3>{card.titulo}</h3>
               <p>{card.subtitulo}</p>
               <p>{producto.nombre}</p>
-              <p>{Number(producto.precio).toFixed(2)} €</p>
+              {card.key === 'oferta' && producto.precio_original !== null && Number(producto.precio_original) > Number(producto.precio) ? (
+                <p>
+                  <span style={{ textDecoration: 'line-through', opacity: 0.75, marginRight: 8 }}>{formatPrice(producto.precio_original)} €</span>
+                  <span style={{ fontWeight: 700, color: '#c92a2a' }}>{formatPrice(producto.precio)} €</span>
+                </p>
+              ) : (
+                <p>{formatPrice(producto.precio)} €</p>
+              )}
               <Link to={`/producto/${producto.id_producto}`} className="btn-ver">Ver producto</Link>
             </div>
           );
