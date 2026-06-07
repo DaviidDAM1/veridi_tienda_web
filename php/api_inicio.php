@@ -62,7 +62,6 @@ if (empty($productos)) {
 }
 
 $normalizar = static function (array $producto): array {
-    $producto = veridiAplicarOfertaProducto($producto);
     $id = (int)$producto['id_producto'];
     $nombreLimpio = limpiarNombreProducto((string)($producto['nombre'] ?? ''));
     return [
