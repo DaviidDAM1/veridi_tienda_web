@@ -40,6 +40,31 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
+function formatearFechaMadrid($fechaRaw)
+{
+    $fechaRaw = trim((string)$fechaRaw);
+    if ($fechaRaw === '') {
+        return '';
+    }
+
+    try {
+        // DB timestamp usually arrives without timezone and is stored in UTC.
+        if (preg_match('/(Z|[+\-]\d{2}:?\d{2})$/', $fechaRaw) === 1) {
+            $fecha = new DateTime($fechaRaw);
+        } else {
+            $fecha = DateTime::createFromFormat('Y-m-d H:i:s', $fechaRaw, new DateTimeZone('UTC'));
+            if (!$fecha) {
+                $fecha = new DateTime($fechaRaw, new DateTimeZone('UTC'));
+            }
+        }
+
+        $fecha->setTimezone(new DateTimeZone('Europe/Madrid'));
+        return $fecha->format(DateTime::ATOM);
+    } catch (Exception $e) {
+        return $fechaRaw;
+    }
+}
+
 $filtroEstrellas = isset($_GET['estrellas']) ? (int)$_GET['estrellas'] : 0;
 if ($filtroEstrellas < 1 || $filtroEstrellas > 5) {
     $filtroEstrellas = 0;
@@ -78,7 +103,7 @@ $lista = array_map(function ($valoracion) {
         'nombre' => (string)$valoracion['nombre'],
         'estrellas' => (int)$valoracion['estrellas'],
         'comentario' => $comentario,
-        'fecha' => (string)$valoracion['fecha']
+        'fecha' => formatearFechaMadrid($valoracion['fecha'] ?? '')
     ];
 }, $valoraciones);
 
