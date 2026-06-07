@@ -574,7 +574,18 @@ function TiendaPage() {
                     <p>{producto.descripcion}</p>
                     {producto.en_oferta && Number(producto.precio_original) > Number(producto.precio) ? (
                       <div className="precio precio-oferta-catalogo" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, margin: '10px 0 2px' }}>
-                        <span style={{ textDecoration: 'line-through', opacity: 0.78, fontSize: 14, color: 'var(--veridi-text-secondary)' }}>{formatPrice(producto.precio_original)} €</span>
+                        <span style={{
+                          textDecoration: 'line-through',
+                          opacity: 1,
+                          fontSize: 14,
+                          color: '#ffffff',
+                          background: 'rgba(17, 24, 39, 0.85)',
+                          padding: '2px 8px',
+                          borderRadius: 999,
+                          lineHeight: 1.2
+                        }}>
+                          {formatPrice(producto.precio_original)} €
+                        </span>
                         <span style={{ color: '#c92a2a', fontWeight: 800, fontSize: 20, lineHeight: 1 }}>{formatPrice(producto.precio)} €</span>
                       </div>
                     ) : (
