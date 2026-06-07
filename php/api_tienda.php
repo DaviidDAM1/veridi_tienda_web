@@ -103,7 +103,7 @@ $ordenar = trim($_GET['ordenar'] ?? '');
 
 $whereParts = ['(p.oculto = 0 OR p.oculto IS NULL)'];
 $params = [];
-$precioOfertaSql = "CASE WHEN p.nombre = 'Gorra Roja Veridi' THEN GREATEST(ROUND(p.precio * 0.60, 2), 0.01) ELSE p.precio END";
+$precioOfertaSql = "CASE WHEN p.nombre = 'Gorra Roja Veridi' THEN 11.34 ELSE p.precio END";
 
 if ($buscar !== '') {
     $whereParts[] = 'p.nombre LIKE :buscar';

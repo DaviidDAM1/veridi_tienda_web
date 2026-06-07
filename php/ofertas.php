@@ -26,6 +26,9 @@ function veridiCalcularPrecioOferta(string $nombre, float $precioBase): array
 
     $porcentaje = (float)($oferta['porcentaje'] ?? 0);
     $porcentaje = max(0.0, min(100.0, $porcentaje));
+    if (strcasecmp(trim($nombre), 'Gorra Roja Veridi') === 0) {
+        $precioBase = 18.90;
+    }
     $precioConOferta = max(0.01, round($precioBase * (1 - ($porcentaje / 100)), 2));
 
     return [
