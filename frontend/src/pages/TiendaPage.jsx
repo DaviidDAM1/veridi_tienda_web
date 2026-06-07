@@ -578,10 +578,8 @@ function TiendaPage() {
                           textDecoration: 'line-through',
                           opacity: 1,
                           fontSize: 14,
-                          color: '#ffffff',
-                          background: 'rgba(17, 24, 39, 0.85)',
-                          padding: '2px 8px',
-                          borderRadius: 999,
+                          color: 'var(--veridi-gold-light)',
+                          padding: '2px 0',
                           lineHeight: 1.2
                         }}>
                           {formatPrice(producto.precio_original)} €
