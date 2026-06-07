@@ -1208,6 +1208,74 @@ function enforceColdWeatherBottomRule(
 	];
 }
 
+function enforceBaseProductInOutfit(array $outfit, ?array $baseProduct, array $slotCategories): array
+{
+	$normalized = [
+		'top_main' => is_array($outfit['top_main'] ?? null) ? $outfit['top_main'] : null,
+		'top_layer' => is_array($outfit['top_layer'] ?? null) ? $outfit['top_layer'] : null,
+		'bottom' => is_array($outfit['bottom'] ?? null) ? $outfit['bottom'] : (is_array($outfit['pantalon'] ?? null) ? $outfit['pantalon'] : null),
+		'shoes' => is_array($outfit['shoes'] ?? null) ? $outfit['shoes'] : null,
+		'extra' => is_array($outfit['extra'] ?? null) ? $outfit['extra'] : null
+	];
+
+	if ($baseProduct === null) {
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'included' => false,
+			'forced' => false,
+			'slot' => null
+		];
+	}
+
+	$baseCategory = normalizeText((string)($baseProduct['categoria'] ?? ''));
+	$targetSlot = null;
+	foreach ($slotCategories as $slot => $allowedCategories) {
+		if (in_array($baseCategory, $allowedCategories, true)) {
+			$targetSlot = (string)$slot;
+			break;
+		}
+	}
+
+	if ($targetSlot === null) {
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'included' => false,
+			'forced' => false,
+			'slot' => null
+		];
+	}
+
+	$baseId = (int)($baseProduct['id_producto'] ?? 0);
+	if ($baseId <= 0) {
+		return [
+			'outfit' => withPantalonAlias($normalized),
+			'included' => false,
+			'forced' => false,
+			'slot' => $targetSlot
+		];
+	}
+
+	$alreadyInTarget = (int)(is_array($normalized[$targetSlot] ?? null) ? ($normalized[$targetSlot]['id_producto'] ?? 0) : 0) === $baseId;
+	$normalized[$targetSlot] = $baseProduct;
+
+	foreach (['top_main', 'top_layer', 'bottom', 'shoes', 'extra'] as $slot) {
+		if ($slot === $targetSlot) {
+			continue;
+		}
+		$currentId = (int)(is_array($normalized[$slot] ?? null) ? ($normalized[$slot]['id_producto'] ?? 0) : 0);
+		if ($currentId === $baseId) {
+			$normalized[$slot] = null;
+		}
+	}
+
+	return [
+		'outfit' => withPantalonAlias($normalized),
+		'included' => true,
+		'forced' => !$alreadyInTarget,
+		'slot' => $targetSlot
+	];
+}
+
 function normalizeOutfitToBudget(
 	array $outfit,
 	array $pool,
@@ -1521,6 +1589,7 @@ function callOpenAiStylist(
 
 	$systemPrompt = "Eres un estilista de moda para Veridi. Solo puedes recomendar IDs de productos presentes en la lista candidata.\n"
 		. "Reglas obligatorias del outfit:\n"
+		. "- Si base_product viene informado, DEBES incluir exactamente ese id en su slot de categoria y no eliminarlo.\n"
 		. "- top_main: categoria Camisetas (obligatorio si existe candidata).\n"
 		. "- top_layer: categoria Chaquetas, Sudaderas o Abrigos (opcional).\n"
 		. "- pantalon: categoria Pantalones o Vaqueros (obligatorio si existe candidata).\n"
@@ -2113,6 +2182,12 @@ try {
 	$coldBottomRuleApplied = (bool)($coldBottomEnforcement['applied'] ?? false);
 	$coldBottomRuleReplacedShort = (bool)($coldBottomEnforcement['replaced_short'] ?? false);
 	$coldBottomRuleMissingNonShort = (bool)($coldBottomEnforcement['missing_non_short_bottom'] ?? false);
+	$baseProductEnforcement = enforceBaseProductInOutfit($outfit, $baseProduct, $slotCategories);
+	$outfit = $baseProductEnforcement['outfit'];
+	$recommended = buildRecommendedFromOutfit($outfit);
+	$baseProductIncluded = (bool)($baseProductEnforcement['included'] ?? false);
+	$baseProductForced = (bool)($baseProductEnforcement['forced'] ?? false);
+	$baseProductSlot = (string)($baseProductEnforcement['slot'] ?? '');
 	$outfitTotal = calculateOutfitTotal($outfit);
 	$budgetRespected = $presupuesto === null || $presupuesto <= 0 ? true : ($outfitTotal <= $presupuesto);
 	$diversified = $signatureBeforeDiversity !== $signatureAfterDiversity;
@@ -2150,6 +2225,10 @@ try {
 
 	if ($coldWeatherRequested && $coldBottomRuleMissingNonShort) {
 		$reply = 'Busque un look de invierno/frio sin pantalones cortos, pero no hay pantalon largo disponible que cumpla los filtros actuales.';
+	}
+
+	if ($baseProductForced) {
+		$reply .= ' Mantuve la prenda base solicitada dentro del outfit como requisito obligatorio.';
 	}
 
 	$openAiStatus = 'openai_ok';
@@ -2220,6 +2299,9 @@ try {
 			'preferred_style' => normalizeStyleValue($preferredStyle),
 			'excluded_styles' => $excludedStyles,
 			'used_base_product' => $baseProduct !== null,
+			'base_product_included' => $baseProductIncluded,
+			'base_product_forced' => $baseProductForced,
+			'base_product_slot' => $baseProductSlot,
 			'used_budget' => $presupuesto !== null && $presupuesto > 0,
 			'message' => $message
 		]
