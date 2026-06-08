@@ -113,7 +113,7 @@ function CheckoutPage() {
   if (loading) {
     return (
       <main>
-        <div className="producto-detalle-container">
+        <div className="producto-detalle-container checkout-page">
           <h1 style={{ color: 'var(--veridi-gold)', marginBottom: 30 }}>Finalizar Compra</h1>
           <p>Cargando checkout...</p>
         </div>
@@ -124,7 +124,7 @@ function CheckoutPage() {
   if (requiresLogin) {
     return (
       <main>
-        <div className="producto-detalle-container">
+        <div className="producto-detalle-container checkout-page">
           <h1 style={{ color: 'var(--veridi-gold)', marginBottom: 30 }}>Finalizar Compra</h1>
           <div className="error-message">Debes iniciar sesión para continuar.</div>
           <button type="button" className="btn-ver" onClick={() => openAuthPanel('login')}>Iniciar sesión</button>
@@ -136,7 +136,7 @@ function CheckoutPage() {
   if (checkout.isEmpty) {
     return (
       <main>
-        <div className="producto-detalle-container">
+        <div className="producto-detalle-container checkout-page">
           <h1 style={{ color: 'var(--veridi-gold)', marginBottom: 30 }}>Finalizar Compra</h1>
           <p className="carrito-vacio">Tu carrito está vacío.</p>
           <Link to="/tienda" className="btn-ver">Volver a la tienda</Link>
@@ -147,57 +147,57 @@ function CheckoutPage() {
 
   return (
     <main>
-      <div className="producto-detalle-container">
+      <div className="producto-detalle-container checkout-page">
         <h1 style={{ color: 'var(--veridi-gold)', marginBottom: 30 }}>Finalizar Compra</h1>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 50, marginBottom: 50 }}>
-          <div>
+        <div className="checkout-grid">
+          <div className="checkout-panel checkout-form-panel">
             <h2 style={{ color: 'var(--veridi-gold)', marginBottom: 20, fontSize: 24 }}>Tus Datos</h2>
 
             {error && (
-              <div style={{ background: 'rgba(211, 47, 47, 0.1)', border: '1px solid #d32f2f', color: '#d32f2f', padding: 15, borderRadius: 6, marginBottom: 20 }}>
+              <div className="checkout-alert error-message">
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              <div>
-                <label style={{ display: 'block', color: 'var(--veridi-gold)', marginBottom: 8, fontWeight: 600 }}>Email:</label>
+            <form onSubmit={handleSubmit} className="checkout-form">
+              <div className="checkout-field">
+                <label>Email:</label>
                 <input
                   type="email"
                   value={form.email}
                   required
                   onChange={(e) => handleChange('email', e.target.value)}
-                  style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 6, background: 'var(--veridi-dark)', color: 'var(--veridi-text)', fontSize: 14 }}
+                  className="checkout-input"
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', color: 'var(--veridi-gold)', marginBottom: 8, fontWeight: 600 }}>Calle y Número:</label>
+              <div className="checkout-field">
+                <label>Calle y Número:</label>
                 <input
                   type="text"
                   value={form.calle}
                   required
                   onChange={(e) => handleChange('calle', e.target.value)}
                   placeholder="Ej: Calle Principal 123"
-                  style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 6, background: 'var(--veridi-dark)', color: 'var(--veridi-text)', fontSize: 14 }}
+                  className="checkout-input"
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', color: 'var(--veridi-gold)', marginBottom: 8, fontWeight: 600 }}>Ciudad:</label>
+              <div className="checkout-field">
+                <label>Ciudad:</label>
                 <input
                   type="text"
                   value={form.ciudad}
                   required
                   onChange={(e) => handleChange('ciudad', e.target.value)}
                   placeholder="Ej: Madrid"
-                  style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 6, background: 'var(--veridi-dark)', color: 'var(--veridi-text)', fontSize: 14 }}
+                  className="checkout-input"
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', color: 'var(--veridi-gold)', marginBottom: 8, fontWeight: 600 }}>Código Postal:</label>
+              <div className="checkout-field">
+                <label>Código Postal:</label>
                 <input
                   type="text"
                   value={form.codigo_postal}
@@ -208,57 +208,57 @@ function CheckoutPage() {
                   maxLength={5}
                   pattern="[0-9]{5}"
                   title="El código postal debe tener exactamente 5 números"
-                  style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 6, background: 'var(--veridi-dark)', color: 'var(--veridi-text)', fontSize: 14 }}
+                  className="checkout-input"
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', color: 'var(--veridi-gold)', marginBottom: 8, fontWeight: 600 }}>País:</label>
+              <div className="checkout-field">
+                <label>País:</label>
                 <input
                   type="text"
                   value={form.pais}
                   required
                   onChange={(e) => handleChange('pais', e.target.value)}
                   placeholder="Ej: España"
-                  style={{ width: '100%', padding: 12, border: '2px solid var(--veridi-gold)', borderRadius: 6, background: 'var(--veridi-dark)', color: 'var(--veridi-text)', fontSize: 14 }}
+                  className="checkout-input"
                 />
               </div>
 
-              <button type="submit" disabled={submitting} style={{ background: 'linear-gradient(135deg, var(--veridi-gold-dark) 0%, var(--veridi-gold) 100%)', color: 'var(--veridi-black)', padding: '16px 30px', border: 'none', borderRadius: 6, fontWeight: 700, fontSize: 16, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 1, marginTop: 10 }}>
+              <button type="submit" disabled={submitting} className="checkout-submit-btn">
                 {submitting ? 'Procesando...' : '💳 Procesar Pago'}
               </button>
 
-              <Link to="/carrito" style={{ textAlign: 'center', color: 'var(--veridi-gold)', textDecoration: 'none', padding: 10, border: '2px solid var(--veridi-gold)', borderRadius: 6 }}>
+              <Link to="/carrito" className="checkout-back-btn">
                 Volver al Carrito
               </Link>
             </form>
           </div>
 
-          <div>
+          <div className="checkout-panel checkout-summary-panel">
             <h2 style={{ color: 'var(--veridi-gold)', marginBottom: 20, fontSize: 24 }}>Resumen de Compra</h2>
 
-            <div style={{ background: 'var(--veridi-dark)', border: '2px solid var(--veridi-gold)', borderRadius: 8, padding: 20 }}>
+            <div className="checkout-summary-card">
               {checkout.items.map((item) => (
-                <div key={`${item.id_producto}_${item.id_talla}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(212, 175, 55, 0.2)' }}>
+                <div key={`${item.id_producto}_${item.id_talla}`} className="checkout-summary-item">
                   <div>
-                    <p style={{ color: 'var(--veridi-text)', margin: '0 0 5px 0', fontWeight: 600 }}>{item.nombre}</p>
-                    <p style={{ color: 'var(--veridi-text-muted)', margin: 0, fontSize: 14 }}>Talla: {item.talla} | Cantidad: {item.cantidad}</p>
+                    <p className="checkout-summary-name">{item.nombre}</p>
+                    <p className="checkout-summary-meta">Talla: {item.talla} | Cantidad: {item.cantidad}</p>
                     {item.en_oferta && Number(item.precio_original) > Number(item.precio) ? (
-                      <p style={{ color: 'var(--veridi-text-muted)', margin: '4px 0 0 0', fontSize: 13 }}>
-                        <span style={{ textDecoration: 'line-through', opacity: 0.75, marginRight: 8 }}>€{formatPrice(item.precio_original)}</span>
-                        <span style={{ color: '#c92a2a', fontWeight: 700 }}>€{formatPrice(item.precio)} unidad</span>
+                      <p className="checkout-summary-price">
+                        <span className="checkout-summary-old">€{formatPrice(item.precio_original)}</span>
+                        <span className="checkout-summary-new">€{formatPrice(item.precio)} unidad</span>
                       </p>
                     ) : (
-                      <p style={{ color: 'var(--veridi-text-muted)', margin: '4px 0 0 0', fontSize: 13 }}>€{formatPrice(item.precio)} unidad</p>
+                      <p className="checkout-summary-price">€{formatPrice(item.precio)} unidad</p>
                     )}
                   </div>
-                  <p style={{ color: 'var(--veridi-gold-light)', fontWeight: 700 }}>€{formatPrice(item.subtotal)}</p>
+                  <p className="checkout-summary-subtotal">€{formatPrice(item.subtotal)}</p>
                 </div>
               ))}
 
-              <div style={{ padding: '20px 0', borderTop: '2px solid var(--veridi-gold)', marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <p style={{ color: 'var(--veridi-gold)', fontWeight: 700, fontSize: 18, margin: 0 }}>Total:</p>
-                <p style={{ color: 'var(--veridi-gold)', fontWeight: 700, fontSize: 24, margin: 0 }}>€{formatPrice(checkout.total)}</p>
+              <div className="checkout-summary-total">
+                <p>Total:</p>
+                <p>€{formatPrice(checkout.total)}</p>
               </div>
             </div>
           </div>
@@ -266,46 +266,19 @@ function CheckoutPage() {
       </div>
 
       {showConfirmModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.55)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 999
-          }}
-        >
-          <div
-            style={{
-              width: 'min(92vw, 460px)',
-              background: 'var(--veridi-dark)',
-              border: '2px solid var(--veridi-gold)',
-              borderRadius: 8,
-              padding: 24,
-              boxShadow: '0 18px 45px rgba(0, 0, 0, 0.4)'
-            }}
-          >
-            <h3 style={{ color: 'var(--veridi-gold)', margin: '0 0 10px 0', fontSize: 22 }}>Confirmar compra</h3>
-            <p style={{ color: 'var(--veridi-text)', margin: '0 0 20px 0', lineHeight: 1.45 }}>
+        <div className="checkout-confirm-overlay">
+          <div className="checkout-confirm-modal">
+            <h3>Confirmar compra</h3>
+            <p>
               ¿Seguro que quieres finalizar la compra?
             </p>
 
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <div className="checkout-confirm-actions">
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(false)}
                 disabled={submitting}
-                style={{
-                  background: 'transparent',
-                  color: 'var(--veridi-gold)',
-                  border: '2px solid var(--veridi-gold)',
-                  borderRadius: 6,
-                  padding: '10px 16px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
+                className="checkout-confirm-cancel"
               >
                 Cancelar
               </button>
@@ -314,15 +287,7 @@ function CheckoutPage() {
                 type="button"
                 onClick={handleConfirmPayment}
                 disabled={submitting}
-                style={{
-                  background: 'linear-gradient(135deg, var(--veridi-gold-dark) 0%, var(--veridi-gold) 100%)',
-                  color: 'var(--veridi-black)',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '10px 18px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
+                className="checkout-confirm-ok"
               >
                 Aceptar
               </button>
