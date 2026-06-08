@@ -102,6 +102,7 @@ body {
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
 }
 
 body::before,
@@ -120,14 +121,14 @@ body::before {
     top: -10vw;
     left: -6vw;
     background: rgba(37,99,235,0.12);
-    animation: drift-blob 16s ease-in-out infinite;
+    animation: drift-blob 16s ease-in-out infinite, float-orb 22s ease-in-out infinite;
 }
 
 body::after {
     right: -10vw;
     bottom: -14vw;
     background: rgba(14,165,164,0.1);
-    animation: drift-blob 18s ease-in-out infinite reverse;
+    animation: drift-blob 18s ease-in-out infinite reverse, float-orb 26s ease-in-out infinite reverse;
 }
 
 /* Custom scrollbar */
@@ -309,6 +310,85 @@ header {
     box-shadow: 0 4px 16px rgba(139,92,246,0.2);
 }
 .icon-button .icon { display: flex; align-items: center; justify-content: center; }
+
+.icon-button,
+.nav-main,
+.icon-only,
+.auth-btn,
+.auth-tab-btn,
+.profile-small-btn,
+.profile-actions-close,
+.profile-modal-close,
+.profile-value-btn,
+.modal-close,
+.btn-cancelar,
+.btn-aceptar,
+.btn-buscar,
+.btn-limpiar-filtros,
+.btn-carrito,
+.btn-deseos,
+.btn-checkout,
+.btn-clear-cart,
+.btn-pagar,
+.btn-vaciar,
+.btn-mover-carrito,
+.btn-eliminar,
+.cantidad-btn,
+.btn-cantidad,
+.paginacion-nav,
+.btn-deseo-card,
+.btn-agregar-deseos,
+.ai-stylist-fab,
+.ai-stylist-maximize,
+.ai-stylist-close,
+.ai-stylist-reset,
+.ai-stylist-form-row button,
+.ai-stylist-quick-prompts button,
+.ai-stylist-add-outfit,
+.ai-stylist-product-add-btn {
+    transform: translateZ(0);
+    will-change: transform, box-shadow, border-color, background-color, filter;
+}
+
+.icon-button:hover,
+.nav-main:hover,
+.icon-only:hover,
+.auth-btn:hover,
+.auth-tab-btn:hover,
+.profile-small-btn:hover,
+.profile-actions-close:hover,
+.profile-modal-close:hover,
+.profile-value-btn:hover,
+.modal-close:hover,
+.btn-cancelar:hover,
+.btn-aceptar:hover,
+.btn-buscar:hover,
+.btn-limpiar-filtros:hover,
+.btn-carrito:hover,
+.btn-deseos:hover,
+.btn-checkout:hover,
+.btn-clear-cart:hover,
+.btn-pagar:hover,
+.btn-vaciar:hover,
+.btn-mover-carrito:hover,
+.btn-eliminar:hover,
+.cantidad-btn:hover,
+.btn-cantidad:hover,
+.paginacion-nav:hover,
+.btn-deseo-card:hover,
+.btn-agregar-deseos:hover,
+.ai-stylist-fab:hover,
+.ai-stylist-maximize:hover,
+.ai-stylist-close:hover,
+.ai-stylist-reset:hover,
+.ai-stylist-form-row button:hover,
+.ai-stylist-quick-prompts button:hover,
+.ai-stylist-add-outfit:hover,
+.ai-stylist-product-add-btn:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 14px 30px rgba(15,23,42,0.16);
+    filter: brightness(1.03);
+}
 
 /* ==========================================
    AUTH PANEL
@@ -1423,6 +1503,44 @@ header {
     animation: card-enter 0.7s ease both;
 }
 
+.catalog-card,
+.profile-card-item,
+.ai-stylist-product-card {
+    animation: card-enter 0.7s ease both;
+}
+
+.catalog-grid > .catalog-card:nth-child(2),
+.cards > .card:nth-child(2),
+.ai-stylist-products > .ai-stylist-product-card:nth-child(2) { animation-delay: 0.05s; }
+.catalog-grid > .catalog-card:nth-child(3),
+.cards > .card:nth-child(3),
+.ai-stylist-products > .ai-stylist-product-card:nth-child(3) { animation-delay: 0.1s; }
+.catalog-grid > .catalog-card:nth-child(4),
+.cards > .card:nth-child(4),
+.ai-stylist-products > .ai-stylist-product-card:nth-child(4) { animation-delay: 0.15s; }
+.catalog-grid > .catalog-card:nth-child(5),
+.cards > .card:nth-child(5),
+.ai-stylist-products > .ai-stylist-product-card:nth-child(5) { animation-delay: 0.2s; }
+.catalog-grid > .catalog-card:nth-child(6),
+.cards > .card:nth-child(6),
+.ai-stylist-products > .ai-stylist-product-card:nth-child(6) { animation-delay: 0.25s; }
+
+.card::after,
+.producto-card::after,
+.catalog-card::after {
+    content: '';
+    position: absolute;
+    inset: -35%;
+    background:
+        linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.2) 50%, transparent 65%),
+        radial-gradient(circle at top left, rgba(37,99,235,0.18) 0%, transparent 42%);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-18%) rotate(8deg);
+    transition: opacity 0.45s ease, transform 0.75s ease;
+    z-index: 0;
+}
+
 .cards > .card:nth-child(2) { animation-delay: 0.05s; }
 .cards > .card:nth-child(3) { animation-delay: 0.1s; }
 .cards > .card:nth-child(4) { animation-delay: 0.15s; }
@@ -1445,15 +1563,19 @@ header {
     z-index: 1;
 }
 .card:hover, .produto-card:hover {
-    transform: translateY(-8px) scale(1.008);
+    transform: translateY(-10px) scale(1.01);
     border-color: rgba(37,99,235,0.32);
-    box-shadow: var(--shadow-md), 0 0 36px rgba(37,99,235,0.12);
+    box-shadow: var(--shadow-md), 0 0 42px rgba(37,99,235,0.16);
 }
 .card:hover::before, .produto-card:hover::before { opacity: 1; }
+.card:hover::after, .producto-card:hover::after, .catalog-card:hover::after {
+    opacity: 1;
+    transform: translateX(18%) rotate(8deg);
+}
 .producto-card:hover {
-    transform: translateY(-8px) scale(1.008);
+    transform: translateY(-10px) scale(1.01);
     border-color: rgba(37,99,235,0.32);
-    box-shadow: var(--shadow-md), 0 0 36px rgba(37,99,235,0.12);
+    box-shadow: var(--shadow-md), 0 0 42px rgba(37,99,235,0.16);
 }
 
 .card h3, .producto-card h3 {
@@ -1483,9 +1605,9 @@ header {
     display: block;
 }
 .card:hover .producto-img, .card:hover img, .producto-card:hover img {
-    transform: scale(1.02);
+    transform: scale(1.075) rotate(-0.35deg);
     border-color: rgba(37,99,235,0.34);
-    box-shadow: 0 12px 30px rgba(37,99,235,0.16);
+    box-shadow: 0 16px 36px rgba(37,99,235,0.18);
 }
 
 .card .precio, .producto-precio {
@@ -1523,7 +1645,7 @@ header {
     background: rgba(244,63,94,0.1);
     border-color: rgba(244,63,94,0.5);
     color: #fb7185;
-    transform: translateY(-2px);
+    transform: translateY(-3px) scale(1.01);
 }
 .btn-deseo-card.es-favorito { background: rgba(244,63,94,0.12); border-color: rgba(244,63,94,0.5); color: #fb7185; }
 
