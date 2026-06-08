@@ -1807,7 +1807,134 @@ header {
 .filtros-tags strong { color: var(--v-accent); margin-right: 8px; font-size: 14px; }
 .filtro-tag { display: inline-block; padding: 6px 14px; background: rgba(37,99,235,0.08); color: #1d4ed8; border: 1px solid rgba(37,99,235,0.24); border-radius: 999px; font-size: 13px; font-weight: 600; }
 .btn-limpiar-filtros { display: inline-block; padding: 6px 14px; background: transparent; color: var(--v-danger); border: 1px solid rgba(244,63,94,0.4); border-radius: 999px; font-size: 13px; font-weight: 600; transition: all 0.2s ease; margin-left: auto; cursor: pointer; }
-.btn-limpiar-filtros:hover { background: rgba(244,63,94,0.1); }
+.btn-limpiar-filtros:hover { background: rgba(244,63,94,0.1); transform: translateY(-1px) scale(1.04); box-shadow: 0 4px 12px rgba(244,63,94,0.18); }
+
+/* ==========================================
+   CATALOG FILTER ANIMATIONS
+   ========================================== */
+
+/* --- Keyframes --- */
+@keyframes filtro-appear {
+    from { opacity: 0; transform: translateY(10px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes tag-pop {
+    0%   { opacity: 0; transform: scale(0.7) translateY(6px); }
+    70%  { transform: scale(1.08) translateY(-2px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes shimmer-line {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+}
+@keyframes stat-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(148,163,184,0); }
+    50%       { box-shadow: 0 0 0 4px rgba(148,163,184,0.15); }
+}
+@keyframes hero-border-glow {
+    0%   { box-shadow: var(--shadow-md), 0 0 56px rgba(37,99,235,0.2); }
+    50%  { box-shadow: var(--shadow-md), 0 0 80px rgba(37,99,235,0.38), 0 0 32px rgba(14,165,164,0.22); }
+    100% { box-shadow: var(--shadow-md), 0 0 56px rgba(37,99,235,0.2); }
+}
+@keyframes searchbar-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Hero card: hover lift + animated glow --- */
+.catalog-hero-card {
+    transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), box-shadow 0.35s ease;
+    animation: hero-border-glow 6s ease-in-out infinite;
+}
+.catalog-hero-card:hover {
+    transform: translateY(-3px) scale(1.008);
+    box-shadow: var(--shadow-md), 0 0 96px rgba(37,99,235,0.48), 0 0 40px rgba(14,165,164,0.3);
+    animation: none;
+}
+
+/* --- eyebrow: shimmer on hover --- */
+.catalog-eyebrow {
+    transition: color 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+.catalog-hero-card:hover .catalog-eyebrow {
+    background: linear-gradient(90deg, rgba(148,163,184,0.0) 0%, rgba(148,163,184,0.18) 50%, rgba(148,163,184,0.0) 100%);
+    background-size: 200% auto;
+    animation: shimmer-line 1.6s linear infinite;
+    border-color: rgba(148,163,184,0.7);
+    color: #fff;
+}
+
+/* --- stats pills: hover lift + pulse --- */
+.catalog-stats span {
+    transition: transform 0.22s ease, background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    cursor: default;
+}
+.catalog-stats span:hover {
+    transform: translateY(-2px) scale(1.05);
+    background: rgba(255,255,255,0.13);
+    border-color: rgba(148,163,184,0.65);
+    animation: stat-pulse 0.9s ease-in-out;
+}
+
+/* --- barra-busqueda: entrance animation --- */
+.barra-busqueda {
+    animation: searchbar-in 0.45s cubic-bezier(0.22,1,0.36,1) both;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.barra-busqueda:focus-within {
+    box-shadow: var(--shadow-sm), 0 10px 40px rgba(37,99,235,0.14), 0 0 0 2px rgba(37,99,235,0.12);
+    border-color: rgba(37,99,235,0.28);
+}
+
+/* --- inputs y selects: hover glow + leve elevación --- */
+.barra-busqueda input[type="text"]:hover,
+.barra-busqueda select:hover {
+    border-color: rgba(37,99,235,0.35);
+    box-shadow: 0 2px 10px rgba(37,99,235,0.1);
+    transform: translateY(-1px);
+}
+
+/* --- botón buscar: escala y glow mejorado --- */
+.barra-busqueda button:hover {
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 12px 28px var(--v-accent-glow), 0 0 0 2px rgba(37,99,235,0.18);
+    opacity: 1;
+    filter: brightness(1.06);
+}
+.barra-busqueda button:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 4px 12px var(--v-accent-glow);
+}
+
+/* --- links carrito / favoritos --- */
+.btn-carrito, .btn-deseos {
+    transition: transform 0.22s ease, box-shadow 0.22s ease, filter 0.22s ease;
+}
+.btn-carrito:hover, .btn-deseos:hover {
+    transform: translateY(-2px) scale(1.04);
+    filter: brightness(1.07);
+    box-shadow: 0 6px 18px rgba(37,99,235,0.22);
+}
+.btn-carrito:active, .btn-deseos:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* --- filtros-activos: aparece con animación --- */
+.filtros-activos {
+    animation: filtro-appear 0.38s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* --- filtro-tag: pop individual + hover glow --- */
+.filtro-tag {
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    animation: tag-pop 0.32s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+.filtro-tag:hover {
+    transform: translateY(-2px) scale(1.07);
+    background: rgba(37,99,235,0.16);
+    border-color: rgba(37,99,235,0.5);
+    box-shadow: 0 4px 14px rgba(37,99,235,0.2);
+}
 
 /* ==========================================
    FILTER MODAL
